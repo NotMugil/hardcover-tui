@@ -4,7 +4,7 @@ project_name: hardcover-tui
 
 builds:
   - id: hardcover-tui
-    main: ./cmd
+    main: ./cmd/hardcover-tui
     binary: hardcover-tui
     env:
       - CGO_ENABLED=0
