@@ -207,6 +207,9 @@ type Model struct {
 	coverArt       string
 	spinner        spinner.Model
 	loading        bool
+	coverLoading   bool // true while cover art is being fetched
+	tagsLoading    bool // true while tags/genres are being fetched
+	reviewsLoading bool // true while reviews are being fetched
 	err            error
 	mode           viewMode
 	cursor         int // for status/rating selection
@@ -247,12 +250,17 @@ func NewFromUserBook(client *api.Client, user *api.User, ub *api.UserBook) *Mode
 		spinner.WithStyle(common.SpinnerStyle),
 	)
 	m := &Model{
-		client:     client,
-		user:       user,
-		userBook:   ub,
-		spinner:    s,
-		flexBox:    newDetailFlexBox(),
-		reviewList: newReviewList(),
+		client:         client,
+		user:           user,
+		userBook:       ub,
+		spinner:        s,
+		tagsLoading:    true,
+		reviewsLoading: true,
+		flexBox:        newDetailFlexBox(),
+		reviewList:     newReviewList(),
+	}
+	if ub != nil && ub.Book.CoverURL() != "" {
+		m.coverLoading = true
 	}
 	m.initJournal()
 	return m
@@ -265,13 +273,16 @@ func NewFromID(client *api.Client, user *api.User, id int) *Model {
 		spinner.WithStyle(common.SpinnerStyle),
 	)
 	m := &Model{
-		client:     client,
-		user:       user,
-		bookID:     id,
-		spinner:    s,
-		loading:    true,
-		flexBox:    newDetailFlexBox(),
-		reviewList: newReviewList(),
+		client:         client,
+		user:           user,
+		bookID:         id,
+		spinner:        s,
+		loading:        true,
+		coverLoading:   true,
+		tagsLoading:    true,
+		reviewsLoading: true,
+		flexBox:        newDetailFlexBox(),
+		reviewList:     newReviewList(),
 	}
 	m.initJournal()
 	return m
@@ -285,14 +296,17 @@ func NewFromBookID(client *api.Client, user *api.User, bookID int) *Model {
 		spinner.WithStyle(common.SpinnerStyle),
 	)
 	m := &Model{
-		client:     client,
-		user:       user,
-		bookID:     bookID,
-		loadByBook: true,
-		spinner:    s,
-		loading:    true,
-		flexBox:    newDetailFlexBox(),
-		reviewList: newReviewList(),
+		client:         client,
+		user:           user,
+		bookID:         bookID,
+		loadByBook:     true,
+		spinner:        s,
+		loading:        true,
+		coverLoading:   true,
+		tagsLoading:    true,
+		reviewsLoading: true,
+		flexBox:        newDetailFlexBox(),
+		reviewList:     newReviewList(),
 	}
 	m.initJournal()
 	return m
@@ -309,9 +323,16 @@ func NewFromListBook(client *api.Client, user *api.User, bookID int, listBooks [
 	return m
 }
 
-// Loaded reports whether the book detail screen has finished its initial load.
+// Loaded reports whether the book detail screen has finished its initial load
+// and all sub-resources (cover, tags, reviews) are ready.
 func (m *Model) Loaded() bool {
-	return !m.loading
+	if m.loading {
+		return false
+	}
+	if m.err != nil {
+		return true
+	}
+	return !m.coverLoading && !m.tagsLoading && !m.reviewsLoading
 }
 
 // SetGenres pre-populates the genres from search results so they display
@@ -434,4 +455,7 @@ func (m *Model) switchToListBook(idx int) {
 	m.descExpanded = false
 	m.mode = modeDetail
 	m.err = nil
+	m.coverLoading = true
+	m.tagsLoading = true
+	m.reviewsLoading = true
 }

@@ -22,21 +22,39 @@ go mod tidy
 go build -o hardcover-tui ./cmd
 ```
 
+#### Go Install
+
+
+```bash
+go install github.com/NotMugil/hardcover-tui/cmd/hardcover-tui@latest
+```
+
 ### Usage
 
 ```bash
 ./hardcover-tui
 ```
 
-When you launch the app for the first time, you’ll be prompted to enter your Hardcover API key to connect and sync your account. 
 
-To get your key, visit [hardcover.app/account/api](https://hardcover.app/account/api) log in using your Hardcover account credentials and then copy and paste it into the app when prompted.
-
+On first launch, you'll be prompted to enter your Hardcover API key. Visit [hardcover.app/account/api](https://hardcover.app/account/api) to get your API key and then copy and paste it into the app when prompted.
 
 ### Contributing
 Contributions are welcome! Whether it is opening an issue, bug fixes, new features, documentation improvements or document translations — all help is appreciated.
 
 Please read the [Contributing Guide](./CONTRIBUTING.md) before getting started.
+
+### Resources
+
+- [Hardcover Website](https://hardcover.app)  
+- [Hardcover API Docs](https://github.com/hardcoverapp/hardcover-docs)
+- [Kameleon21/oku](https://github.com/Kameleon21/oku)
+
+#### Related Libraries
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea)
+- [Bubbles](https://github.com/charmbracelet/bubbles)
+- [Lip Gloss](https://github.com/charmbracelet/lipgloss)
+- [go-graphql-client](https://github.com/hasura/go-graphql-client)
+- [go-keyring](https://github.com/zalando/go-keyring)
 
 ### Disclaimer
 This is an independent, community-developed client and is not affiliated with, sponsored by, or endorsed by Hardcover. It connects to the Hardcover GraphQL API using your personal API key and acts on your behalf.

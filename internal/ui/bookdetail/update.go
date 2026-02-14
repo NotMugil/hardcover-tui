@@ -21,6 +21,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		if msg.err != nil {
 			m.err = msg.err
+			m.coverLoading = false
+			m.tagsLoading = false
+			m.reviewsLoading = false
 			return m, nil
 		}
 		m.userBook = msg.userBook
@@ -28,9 +31,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.userBook != nil {
 			if msg.userBook.Book.CoverURL() != "" {
 				cmds = append(cmds, m.loadCover(msg.userBook.Book.CoverURL()))
+			} else {
+				m.coverLoading = false
 			}
 			cmds = append(cmds, m.loadTags(msg.userBook.Book.ID))
 			cmds = append(cmds, m.loadReviews(msg.userBook.Book.ID))
+		} else {
+			m.coverLoading = false
+			m.tagsLoading = false
+			m.reviewsLoading = false
 		}
 		if len(cmds) > 0 {
 			return m, tea.Batch(cmds...)
@@ -41,6 +50,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		if msg.err != nil {
 			m.err = msg.err
+			m.coverLoading = false
+			m.tagsLoading = false
+			m.reviewsLoading = false
 			return m, nil
 		}
 		m.book = msg.book
@@ -59,10 +71,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmds []tea.Cmd
 		if coverURL != "" {
 			cmds = append(cmds, m.loadCover(coverURL))
+		} else {
+			m.coverLoading = false
 		}
 		if bid > 0 {
 			cmds = append(cmds, m.loadTags(bid))
 			cmds = append(cmds, m.loadReviews(bid))
+		} else {
+			m.tagsLoading = false
+			m.reviewsLoading = false
 		}
 		if len(cmds) > 0 {
 			return m, tea.Batch(cmds...)
@@ -71,12 +88,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case coverLoadedMsg:
 		m.coverArt = msg.art
+		m.coverLoading = false
 		return m, nil
 
 	case tagsLoadedMsg:
 		if msg.err == nil {
 			m.genres = deduplicateTags(msg.genres)
 		}
+		m.tagsLoading = false
 		return m, nil
 
 	case reviewsLoadedMsg:
@@ -88,6 +107,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.reviewList.SetItems(items)
 		}
+		m.reviewsLoading = false
 		return m, nil
 
 	case statusUpdatedMsg:

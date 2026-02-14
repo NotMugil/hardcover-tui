@@ -39,6 +39,7 @@ type Model struct {
 	spinner      spinner.Model
 	searching    bool
 	inputFocused bool
+	tableFocused bool
 	err          error
 	width        int
 	height       int
@@ -141,9 +142,9 @@ func (m *Model) Loaded() bool {
 }
 
 // InputFocused returns true when the screen is handling its own key input
-// (search input focused, or navigating results table where esc refocuses input).
+// (search input focused, or actively navigating the results table).
 func (m *Model) InputFocused() bool {
-	return m.inputFocused || len(m.results) > 0
+	return m.inputFocused || m.tableFocused
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -157,6 +158,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.results = msg.books
 		m.table.SetRows(booksToRows(m.results))
 		m.inputFocused = false
+		m.tableFocused = true
 		m.textInput.Blur()
 		m.table.Focus()
 		return m, nil
@@ -204,11 +206,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-		case "esc", "/":
+		case "/":
 			m.inputFocused = true
+			m.tableFocused = false
 			m.textInput.Focus()
 			m.table.Blur()
 			return m, textinput.Blink
+		case "esc":
+			m.tableFocused = false
+			m.table.Blur()
+			return m, nil
 		}
 
 		var cmd tea.Cmd
