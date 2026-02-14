@@ -7,6 +7,31 @@ An unofficial terminal user interface (TUI) client for [Hardcover.app](https://h
 
 ![preview](./assets/preview.gif)
 
+### Installation
+
+#### From Release Binaries
+
+Download the latest binary for your platform from the [Releases](https://github.com/NotMugil/hardcover-tui/releases) page.
+
+#### From Source
+
+```bash
+git clone https://github.com/NotMugil/hardcover-tui.git
+cd hardcover-tui
+go mod tidy
+go build -o hardcover-tui ./cmd
+```
+
+### Usage
+
+```bash
+./hardcover-tui
+```
+
+When you launch the app for the first time, you’ll be prompted to enter your Hardcover API key to connect and sync your account. 
+
+To get your key, visit [hardcover.app/account/api](https://hardcover.app/account/api) log in using your Hardcover account credentials and then copy and paste it into the app when prompted.
+
 
 ### Contributing
 Contributions are welcome! Whether it is opening an issue, bug fixes, new features, documentation improvements or document translations — all help is appreciated.
