@@ -1,0 +1,21 @@
+# GoReleaser output
+dist/
+
+# Build output
+bin/
+
+# Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test binaries
+*.test
+
+# Go coverage / profile output
+*.out
+
+# Vendored dependencies
+vendor/
