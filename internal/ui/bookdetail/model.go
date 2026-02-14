@@ -12,8 +12,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"hardcover-tui/internal/api"
-	"hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/common"
 )
 
 // Navigation messages for app.go to catch.

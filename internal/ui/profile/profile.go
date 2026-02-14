@@ -10,11 +10,11 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"hardcover-tui/internal/api"
-	"hardcover-tui/internal/api/mutations"
-	"hardcover-tui/internal/api/queries"
-	"hardcover-tui/internal/common"
-	"hardcover-tui/internal/keystore"
+	"github.com/NotMugil/hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api/mutations"
+	"github.com/NotMugil/hardcover-tui/internal/api/queries"
+	"github.com/NotMugil/hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/keystore"
 )
 
 type profileLoadedMsg struct {

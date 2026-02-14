@@ -13,7 +13,7 @@ import (
 
 const (
 	graphqlEndpoint = "https://api.hardcover.app/v1/graphql"
-	userAgent       = "hardcover-tui/1.0"
+	userAgent       = "github.com/NotMugil/hardcover-tui/1.0"
 	requestsPerMin  = 60
 	requestTimeout  = 30 * time.Second
 )

@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"hardcover-tui/internal/api/queries"
+	"github.com/NotMugil/hardcover-tui/internal/api/queries"
 )
 
 func (m *Model) loadStats() tea.Cmd {

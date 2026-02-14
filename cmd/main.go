@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	zone "github.com/lrstanley/bubblezone"
 
-	"hardcover-tui/internal/app"
+	"github.com/NotMugil/hardcover-tui/internal/app"
 )
 
 var version = "dev"

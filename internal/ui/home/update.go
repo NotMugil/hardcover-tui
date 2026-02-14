@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/common"
 )
 
 // openBrowser opens the given URL in the system's default browser.

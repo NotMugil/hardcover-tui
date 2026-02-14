@@ -13,9 +13,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	datepicker "github.com/ethanefung/bubble-datepicker"
 
-	"hardcover-tui/internal/api"
-	"hardcover-tui/internal/api/mutations"
-	"hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api/mutations"
+	"github.com/NotMugil/hardcover-tui/internal/common"
 )
 
 type progressUpdatedMsg struct {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api"
 )
 
 // GetUserBooksForStats fetches user books with book metadata for stats.

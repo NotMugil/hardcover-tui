@@ -11,8 +11,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"hardcover-tui/internal/api"
-	"hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/common"
 )
 
 // NavigateToBookFromListMsg signals the app to navigate to a book's detail from a list.

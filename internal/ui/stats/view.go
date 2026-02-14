@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 
-	"hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/common"
 )
 
 func (m *Model) View() string {

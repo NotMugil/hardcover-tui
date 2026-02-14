@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"hardcover-tui/internal/api/mutations"
-	"hardcover-tui/internal/api/queries"
+	"github.com/NotMugil/hardcover-tui/internal/api/mutations"
+	"github.com/NotMugil/hardcover-tui/internal/api/queries"
 )
 
 func (m *Model) loadLists() tea.Cmd {

@@ -10,9 +10,9 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"hardcover-tui/internal/api"
-	"hardcover-tui/internal/api/mutations"
-	"hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api/mutations"
+	"github.com/NotMugil/hardcover-tui/internal/common"
 )
 
 type reviewSavedMsg struct {

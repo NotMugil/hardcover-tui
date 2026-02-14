@@ -1,4 +1,4 @@
-module hardcover-tui
+module github.com/NotMugil/hardcover-tui
 
 go 1.25.4
 

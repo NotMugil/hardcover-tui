@@ -8,7 +8,7 @@ import (
 
 	graphql "github.com/hasura/go-graphql-client"
 
-	"hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api"
 )
 
 // Search performs a book search using the Hardcover search API.

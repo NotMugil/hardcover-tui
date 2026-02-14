@@ -6,7 +6,7 @@ import (
 
 	graphql "github.com/hasura/go-graphql-client"
 
-	"hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api"
 )
 
 // Numeric is a custom GraphQL scalar that maps to Hardcover's "numeric" type.

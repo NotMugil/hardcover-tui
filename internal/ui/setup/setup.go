@@ -11,10 +11,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"hardcover-tui/internal/api"
-	"hardcover-tui/internal/api/queries"
-	"hardcover-tui/internal/common"
-	"hardcover-tui/internal/keystore"
+	"github.com/NotMugil/hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api/queries"
+	"github.com/NotMugil/hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/keystore"
 )
 
 // SetupCompleteMsg is sent when the user has successfully authenticated.
