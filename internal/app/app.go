@@ -501,13 +501,15 @@ func (m Model) View() string {
 		return ""
 	}
 
+	if m.tabLoading {
+		return zone.Scan(m.loader.View(m.width, m.height))
+	}
+
 	nav := m.renderNav()
 	bc := m.renderBreadcrumb()
 
 	var content string
-	if m.tabLoading {
-		content = m.loader.View(m.width, m.contentHeight())
-	} else if top := m.nav.Top(); top != nil {
+	if top := m.nav.Top(); top != nil {
 		content = top.Model.View()
 	}
 

@@ -7,3 +7,4 @@
 - [ ] Add icons for private public follower only
 - [ ] Add sorting of the books (sort by a-z, z-a, owner rating, community rating, etc)
 - [ ] Show lists followed by user [followed_lists] in lists tab
+- [ ] add cli commands to set-auth token, remove auth token
