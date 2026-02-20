@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -117,7 +118,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			switch msg.String() {
+			k := strings.ToLower(msg.String())
+			switch k {
 			case "j", "down":
 				if m.activityCursor < len(m.activities)-1 {
 					m.activityCursor++
@@ -145,7 +147,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "a":
 				if m.activityFilter == activityFilterMe {
-					m.activityFilter = activityFilterFollowing
+					m.activityFilter = activityFilterForYou
 				} else {
 					m.activityFilter = activityFilterMe
 				}
@@ -160,7 +162,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.readingFocused {
-			switch msg.String() {
+			k := strings.ToLower(msg.String())
+			switch k {
 			case "j", "down":
 				if m.readingCursor < len(m.reading)-1 {
 					m.readingCursor++
@@ -191,7 +194,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		switch msg.String() {
+		k := strings.ToLower(msg.String())
+		switch k {
 		case "r":
 			if len(m.reading) > 0 {
 				m.readingFocused = true
@@ -209,18 +213,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.page = 0
 			m.filterPending = true
 			return m, m.scheduleFilterLoad()
-		case "F":
+		case "shift+f":
 			m.filter = (m.filter + 6) % 7
 			m.page = 0
 			m.filterPending = true
 			return m, m.scheduleFilterLoad()
-		case "N":
+		case "]":
 			if len(m.books) == m.pageSize {
 				m.page++
 				m.booksLoading = true
 				return m, tea.Batch(m.spinner.Tick, m.loadBooksOnly())
 			}
-		case "P":
+		case "[":
 			if m.page > 0 {
 				m.page--
 				m.booksLoading = true
@@ -232,7 +236,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			if m.activityFilter == activityFilterMe {
-				m.activityFilter = activityFilterFollowing
+				m.activityFilter = activityFilterForYou
 			} else {
 				m.activityFilter = activityFilterMe
 			}

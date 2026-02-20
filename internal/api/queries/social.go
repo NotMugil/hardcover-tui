@@ -10,164 +10,108 @@ import (
 	"github.com/NotMugil/hardcover-tui/internal/api"
 )
 
-// GetActivities fetches recent user activities.
+// activityFields is the shared set of fields queried for activities.
+const activityFields = `
+	id
+	event
+	data
+	book_id
+	likes_count
+	privacy_setting_id
+	created_at
+	book {
+		id
+		title
+		image { url }
+	}
+	user {
+		id
+		username
+		name
+	}
+`
+
+// GetActivities fetches the current user's own activities.
 func GetActivities(ctx context.Context, c *api.Client, userID int, limit int) ([]api.Activity, error) {
-	var q struct {
-		Activities []struct {
-			ID               int    `graphql:"id"`
-			Event            string `graphql:"event"`
-			BookID           *int   `graphql:"book_id"`
-			LikesCount       int    `graphql:"likes_count"`
-			PrivacySettingID int    `graphql:"privacy_setting_id"`
-			CreatedAt        string `graphql:"created_at"`
-			Book             *struct {
-				ID    int        `graphql:"id"`
-				Title string     `graphql:"title"`
-				Image *api.Image `graphql:"image"`
-			} `graphql:"book"`
-			User struct {
-				ID       int     `graphql:"id"`
-				Username string  `graphql:"username"`
-				Name     *string `graphql:"name"`
-			} `graphql:"user"`
-		} `graphql:"activities(where: {user_id: {_eq: $userID}}, order_by: {created_at: desc}, limit: $limit)"`
-	}
+	query := fmt.Sprintf(`query {
+		activities(
+			where: {user_id: {_eq: %d}},
+			order_by: {created_at: desc},
+			limit: %d
+		) { %s }
+	}`, userID, limit, activityFields)
 
-	vars := map[string]interface{}{
-		"userID": graphql.Int(userID),
-		"limit":  graphql.Int(limit),
-	}
-
-	if err := c.Query(ctx, &q, vars); err != nil {
+	raw, err := c.ExecRaw(ctx, query, nil)
+	if err != nil {
 		return nil, fmt.Errorf("query activities: %w", err)
 	}
 
-	activities := make([]api.Activity, len(q.Activities))
-	for i, a := range q.Activities {
-		act := api.Activity{
-			ID:               a.ID,
-			Event:            a.Event,
-			BookID:           a.BookID,
-			LikesCount:       a.LikesCount,
-			PrivacySettingID: a.PrivacySettingID,
-			CreatedAt:        a.CreatedAt,
-			User: &api.ActivityUser{
-				ID:       a.User.ID,
-				Username: a.User.Username,
-				Name:     a.User.Name,
-			},
-		}
-		if a.Book != nil {
-			b := &api.Book{
-				ID:    a.Book.ID,
-				Title: a.Book.Title,
-				Image: a.Book.Image,
-			}
-			act.Book = b
-		}
-		activities[i] = act
+	var resp struct {
+		Activities []activityRaw `json:"activities"`
 	}
-	return activities, nil
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil, fmt.Errorf("parse activities: %w", err)
+	}
+
+	return mapActivities(resp.Activities), nil
 }
 
-// GetFollowingActivities fetches activities from users the given user follows.
-// Uses a two-step approach: first get followed user IDs, then query their activities.
-func GetFollowingActivities(ctx context.Context, c *api.Client, userID int, limit int) ([]api.Activity, error) {
-	const followsQuery = `query {
-		me {
-			followed_users {
-				followed_user_id
-			}
-		}
-	}`
-
-	raw, err := c.ExecRaw(ctx, followsQuery, nil)
-	if err != nil {
-		return nil, fmt.Errorf("query followed users: %w", err)
-	}
-
-	var followResp struct {
-		Me []struct {
-			FollowedUsers []struct {
-				FollowedUserID int `json:"followed_user_id"`
-			} `json:"followed_users"`
-		} `json:"me"`
-	}
-	if err := json.Unmarshal(raw, &followResp); err != nil {
-		return nil, fmt.Errorf("parse followed users: %w", err)
-	}
-
-	if len(followResp.Me) == 0 || len(followResp.Me[0].FollowedUsers) == 0 {
-		return nil, nil
-	}
-
-	var followedIDs []int
-	for _, fu := range followResp.Me[0].FollowedUsers {
-		followedIDs = append(followedIDs, fu.FollowedUserID)
-	}
-
-	followedJSON, _ := json.Marshal(followedIDs)
-	activitiesQuery := fmt.Sprintf(`query {
-		activities(
-			where: {user_id: {_in: %s}},
+// GetForYouActivities fetches the "for you" activity feed.
+func GetForYouActivities(ctx context.Context, c *api.Client, _ int, limit int) ([]api.Activity, error) {
+	query := fmt.Sprintf(`query {
+		activity_foryou_feed(
+			args: {feed_limit: %d, feed_offset: 0},
 			order_by: {created_at: desc},
 			limit: %d
-		) {
-			id
-			event
-			book_id
-			likes_count
-			privacy_setting_id
-			created_at
-			book {
-				id
-				title
-				image { url }
-			}
-			user {
-				id
-				username
-				name
-			}
-		}
-	}`, string(followedJSON), limit)
+		) { %s }
+	}`, limit, limit, activityFields)
 
-	raw, err = c.ExecRaw(ctx, activitiesQuery, nil)
+	raw, err := c.ExecRaw(ctx, query, nil)
 	if err != nil {
-		return nil, fmt.Errorf("query following activities: %w", err)
+		return nil, fmt.Errorf("query activity_foryou_feed: %w", err)
 	}
 
-	var actResp struct {
-		Activities []struct {
-			ID               int    `json:"id"`
-			Event            string `json:"event"`
-			BookID           *int   `json:"book_id"`
-			LikesCount       int    `json:"likes_count"`
-			PrivacySettingID int    `json:"privacy_setting_id"`
-			CreatedAt        string `json:"created_at"`
-			Book             *struct {
-				ID    int    `json:"id"`
-				Title string `json:"title"`
-				Image *struct {
-					URL string `json:"url"`
-				} `json:"image"`
-			} `json:"book"`
-			User struct {
-				ID       int     `json:"id"`
-				Username string  `json:"username"`
-				Name     *string `json:"name"`
-			} `json:"user"`
-		} `json:"activities"`
+	var resp struct {
+		ActivityForyouFeed []activityRaw `json:"activity_foryou_feed"`
 	}
-	if err := json.Unmarshal(raw, &actResp); err != nil {
-		return nil, fmt.Errorf("parse following activities: %w", err)
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil, fmt.Errorf("parse activity_foryou_feed: %w", err)
 	}
 
-	var all []api.Activity
-	for _, a := range actResp.Activities {
+	return mapActivities(resp.ActivityForyouFeed), nil
+}
+
+// activityRaw is the JSON shape returned by activity queries.
+type activityRaw struct {
+	ID               int              `json:"id"`
+	Event            string           `json:"event"`
+	Data             json.RawMessage  `json:"data"`
+	BookID           *int             `json:"book_id"`
+	LikesCount       int              `json:"likes_count"`
+	PrivacySettingID int              `json:"privacy_setting_id"`
+	CreatedAt        string           `json:"created_at"`
+	Book             *struct {
+		ID    int    `json:"id"`
+		Title string `json:"title"`
+		Image *struct {
+			URL string `json:"url"`
+		} `json:"image"`
+	} `json:"book"`
+	User struct {
+		ID       int     `json:"id"`
+		Username string  `json:"username"`
+		Name     *string `json:"name"`
+	} `json:"user"`
+}
+
+// mapActivities converts raw query results to api.Activity values.
+func mapActivities(raw []activityRaw) []api.Activity {
+	out := make([]api.Activity, len(raw))
+	for i, a := range raw {
 		act := api.Activity{
 			ID:               a.ID,
 			Event:            a.Event,
+			Data:             a.Data,
 			BookID:           a.BookID,
 			LikesCount:       a.LikesCount,
 			PrivacySettingID: a.PrivacySettingID,
@@ -188,10 +132,9 @@ func GetFollowingActivities(ctx context.Context, c *api.Client, userID int, limi
 			}
 			act.Book = b
 		}
-		all = append(all, act)
+		out[i] = act
 	}
-
-	return all, nil
+	return out
 }
 
 // GetLists fetches the user's lists.

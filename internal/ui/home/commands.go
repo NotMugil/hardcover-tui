@@ -80,8 +80,8 @@ func (m *Model) loadActivities() tea.Cmd {
 		defer cancel()
 		var activities []api.Activity
 		var err error
-		if af == activityFilterFollowing {
-			activities, err = queries.GetFollowingActivities(ctx, client, user.ID, 30)
+		if af == activityFilterForYou {
+			activities, err = queries.GetForYouActivities(ctx, client, user.ID, 30)
 		} else {
 			activities, err = queries.GetActivities(ctx, client, user.ID, 30)
 		}

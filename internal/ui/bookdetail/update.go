@@ -273,7 +273,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) updateDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.reviewMode {
-		switch msg.String() {
+		k := strings.ToLower(msg.String())
+		switch k {
 		case "esc", "v":
 			m.reviewMode = false
 			return m, nil
@@ -309,7 +310,8 @@ func (m *Model) updateDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	switch msg.String() {
+	k := strings.ToLower(msg.String())
+	switch k {
 	case "m":
 		m.descExpanded = !m.descExpanded
 	case "v":
@@ -386,7 +388,7 @@ func (m *Model) updateDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.switchToListBook(m.listIndex)
 			return m, tea.Batch(m.spinner.Tick, m.loadBookByBookID())
 		}
-	case "N":
+	case "shift+n":
 		if len(m.listBooks) > 0 && m.listIndex > 0 {
 			m.listIndex--
 			m.switchToListBook(m.listIndex)
@@ -398,7 +400,8 @@ func (m *Model) updateDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m *Model) updateStatusSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	statuses := api.AllStatuses()
-	switch msg.String() {
+	k := strings.ToLower(msg.String())
+	switch k {
 	case "up", "k":
 		if m.cursor > 0 {
 			m.cursor--
@@ -431,7 +434,8 @@ func (m *Model) updateStatusSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateRatingSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	k := strings.ToLower(msg.String())
+	switch k {
 	case "up", "k":
 		if m.cursor < 9 {
 			m.cursor++
@@ -451,7 +455,8 @@ func (m *Model) updateRatingSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateJournal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	k := strings.ToLower(msg.String())
+	switch k {
 	case "esc":
 		m.mode = modeDetail
 		return m, nil
@@ -496,7 +501,8 @@ func (m *Model) updateJournalWrite(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateReviewRead(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	k := strings.ToLower(msg.String())
+	switch k {
 	case "esc", "q":
 		m.mode = modeDetail
 		m.selectedReview = nil
@@ -508,7 +514,8 @@ func (m *Model) updateReviewRead(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateListSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	k := strings.ToLower(msg.String())
+	switch k {
 	case "esc":
 		m.mode = modeDetail
 		m.listErr = nil

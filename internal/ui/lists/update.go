@@ -155,7 +155,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.mode == modePrivacy {
 			privacyOptions := api.AllPrivacySettings()
-			switch msg.String() {
+			switch strings.ToLower(msg.String()) {
 			case "esc":
 				m.mode = modeNormal
 				return m, nil
@@ -267,7 +267,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.focusRight {
-			switch msg.String() {
+			switch strings.ToLower(msg.String()) {
 			case "esc":
 				m.focusRight = false
 				return m, nil
@@ -314,7 +314,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		switch msg.String() {
+		switch strings.ToLower(msg.String()) {
 		case "enter":
 			if len(m.listBooks) > 0 {
 				m.focusRight = true

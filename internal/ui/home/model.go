@@ -43,7 +43,7 @@ type activityFilter int
 
 const (
 	activityFilterMe        activityFilter = iota // user's own activity
-	activityFilterFollowing                       // following users' activity
+	activityFilterForYou                          // "for you" activity feed
 )
 
 // bookItem implements list.DefaultItem for the bubbles list.

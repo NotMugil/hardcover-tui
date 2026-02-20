@@ -197,7 +197,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		switch msg.String() {
+		switch strings.ToLower(msg.String()) {
 		case "e":
 			m.mode = modeEdit
 			m.editField = 0

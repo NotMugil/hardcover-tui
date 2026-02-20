@@ -307,18 +307,18 @@ func (m *Model) renderActivityPanel(width, height int) string {
 
 	var filterBar strings.Builder
 	meLabel := "Mine"
-	followingLabel := "Following"
+	forYouLabel := "For You"
 	if m.activityFilter == activityFilterMe {
 		meLabel = lipgloss.NewStyle().Bold(true).Foreground(common.ColorPrimary).
 			Background(common.ColorHighlight).Padding(0, 1).Render(meLabel)
-		followingLabel = lipgloss.NewStyle().Foreground(common.ColorMuted).Padding(0, 1).Render(followingLabel)
+		forYouLabel = lipgloss.NewStyle().Foreground(common.ColorMuted).Padding(0, 1).Render(forYouLabel)
 	} else {
 		meLabel = lipgloss.NewStyle().Foreground(common.ColorMuted).Padding(0, 1).Render(meLabel)
-		followingLabel = lipgloss.NewStyle().Bold(true).Foreground(common.ColorPrimary).
-			Background(common.ColorHighlight).Padding(0, 1).Render(followingLabel)
+		forYouLabel = lipgloss.NewStyle().Bold(true).Foreground(common.ColorPrimary).
+			Background(common.ColorHighlight).Padding(0, 1).Render(forYouLabel)
 	}
 	filterBar.WriteString(meLabel)
-	filterBar.WriteString(followingLabel)
+	filterBar.WriteString(forYouLabel)
 
 	var content strings.Builder
 	content.WriteString(filterBar.String())
@@ -366,7 +366,7 @@ func (m *Model) renderActivityPanel(width, height int) string {
 			if m.activityFocused && i == m.activityCursor {
 				cursor = "> "
 			}
-			line := renderActivityItem(act, innerW-2, m.activityFilter == activityFilterFollowing)
+			line := renderActivityItem(act, innerW-2, m.activityFilter == activityFilterForYou)
 			lines := strings.Split(line, "\n")
 			for j, l := range lines {
 				if j == 0 {
@@ -410,116 +410,112 @@ func renderActivityItem(act api.Activity, maxW int, showUser bool) string {
 		bookTitle = common.ValueStyle.Render(common.Truncate(act.Book.Title, maxW-4))
 	}
 
+	data := act.ParseData()
+	var label string
+
 	switch act.Event {
-	case "currently_reading":
-		b.WriteString(prefix + common.LabelStyle.Render("📖 Started reading"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "finished_reading":
-		b.WriteString(prefix + common.LabelStyle.Render("✓ Finished reading"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-			if act.Book != nil && act.Book.Pages != nil {
-				b.WriteString(common.HelpStyle.Render(fmt.Sprintf(" (%d pages)", *act.Book.Pages)))
-			}
-		}
-	case "want_to_read":
-		b.WriteString(prefix + common.LabelStyle.Render("Added to want-to-read list"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "rating":
-		b.WriteString(prefix + common.LabelStyle.Render("⭐ Rated a book"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "review":
-		b.WriteString(prefix + common.LabelStyle.Render("✎ Wrote a review for"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "journal_entry":
-		b.WriteString(prefix + common.LabelStyle.Render("📝 New journal entry for"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "book_added":
-		b.WriteString(prefix + common.LabelStyle.Render("Added a new book to library"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "status_update":
-		b.WriteString(prefix + common.LabelStyle.Render("Changed reading status of"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "list_created":
-		b.WriteString(prefix + common.LabelStyle.Render("📋 Created a new reading list"))
-	case "list_book_added":
-		b.WriteString(prefix + common.LabelStyle.Render("Added a book to a list"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
-	case "goal_created":
-		b.WriteString(prefix + common.LabelStyle.Render("🎯 Set a new reading goal"))
-	case "goal_completed":
-		b.WriteString(prefix + common.LabelStyle.Render("🏆 Completed a reading goal!"))
-	case "dnf":
-		b.WriteString(prefix + common.LabelStyle.Render("✗ Did not finish"))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
+	case "UserBookActivity":
+		label = describeUserBookActivity(data, bookTitle)
+	case "GoalActivity":
+		label = describeGoalActivity(data)
+	case "ListActivity":
+		label = describeListActivity(data, bookTitle)
+	case "PromptActivity":
+		label = describePromptActivity(data)
 	default:
-		event := formatActivityEvent(act.Event)
-		b.WriteString(prefix + common.LabelStyle.Render(event))
-		if bookTitle != "" {
-			b.WriteString("\n  " + bookTitle)
-		}
+		label = describeFallbackActivity(act.Event, bookTitle)
 	}
 
-	timeStr := relativeTime(act.CreatedAt)
-	b.WriteString("\n  " + common.HelpStyle.Render(timeStr))
+	b.WriteString(prefix + label)
+	b.WriteString("\n  " + common.HelpStyle.Render(relativeTime(act.CreatedAt)))
 
 	return b.String()
 }
 
-// formatActivityEvent converts an event string to a readable label.
-func formatActivityEvent(event string) string {
-	switch event {
-	case "status_update":
-		return "Updated status on"
-	case "book_added":
-		return "Added to library"
-	case "review":
-		return "Reviewed"
-	case "rating":
-		return "Rated"
-	case "journal_entry":
-		return "Wrote a journal entry for"
-	case "currently_reading":
-		return "Started reading"
-	case "finished_reading":
-		return "Finished reading"
-	case "want_to_read":
-		return "Wants to read"
-	case "list_created":
-		return "Created a list"
-	case "list_book_added":
-		return "Added to a list"
-	case "goal_created":
-		return "Set a reading goal"
-	case "goal_completed":
-		return "Completed a reading goal"
-	case "dnf":
-		return "Did not finish"
-	default:
-		s := strings.ReplaceAll(event, "_", " ")
-		if len(s) > 0 {
-			s = strings.ToUpper(s[:1]) + s[1:]
-		}
-		return s
+func describeUserBookActivity(data api.ActivityParsedData, bookTitle string) string {
+	if data.UserBook == nil {
+		return withBook(common.LabelStyle.Render("Updated"), bookTitle)
 	}
+	ub := data.UserBook
+
+	if ub.Review != nil && *ub.Review != "" {
+		return withBook(common.LabelStyle.Render("Reviewed"), bookTitle)
+	}
+
+	if ub.Rating != nil && *ub.Rating != "" {
+		return withBook(common.LabelStyle.Render("Rated "+*ub.Rating), bookTitle)
+	}
+
+	if ub.StatusID != nil {
+		var status string
+		switch *ub.StatusID {
+		case 1:
+			status = "Wants to read"
+		case 2:
+			status = "Started reading"
+		case 3:
+			status = "Finished"
+		case 4:
+			status = "Paused"
+		case 5:
+			status = "Did not finish"
+		case 6:
+			status = "Removed"
+		default:
+			status = "Updated"
+		}
+		return withBook(common.LabelStyle.Render(status), bookTitle)
+	}
+
+	return withBook(common.LabelStyle.Render("Updated"), bookTitle)
+}
+
+func describeGoalActivity(data api.ActivityParsedData) string {
+	if data.Goal == nil {
+		return common.LabelStyle.Render("Updated reading goal")
+	}
+	g := data.Goal
+	if g.PercentComplete >= 1.0 {
+		return common.LabelStyle.Render("Completed reading goal")
+	}
+	if g.Description != "" {
+		return common.LabelStyle.Render("Set goal: ") +
+			common.ValueStyle.Render(g.Description)
+	}
+	return common.LabelStyle.Render("Set a reading goal")
+}
+
+func describeListActivity(data api.ActivityParsedData, bookTitle string) string {
+	if data.List == nil {
+		return withBook(common.LabelStyle.Render("Updated a list"), bookTitle)
+	}
+	return withBook(
+		common.LabelStyle.Render("Updated list: ")+common.ValueStyle.Render(data.List.Name),
+		bookTitle,
+	)
+}
+
+func describePromptActivity(data api.ActivityParsedData) string {
+	if data.Prompt != nil && data.Prompt.Question != "" {
+		return common.LabelStyle.Render("Answered: ") +
+			common.ValueStyle.Render(data.Prompt.Question)
+	}
+	return common.LabelStyle.Render("Answered a prompt")
+}
+
+func describeFallbackActivity(event, bookTitle string) string {
+	s := strings.ReplaceAll(event, "_", " ")
+	if len(s) > 0 {
+		s = strings.ToUpper(s[:1]) + s[1:]
+	}
+	return withBook(common.LabelStyle.Render(s), bookTitle)
+}
+
+func withBook(label, bookTitle string) string {
+	if bookTitle != "" {
+		return label + "\n  " + bookTitle
+	}
+	return label
 }
 
 // relativeTime parses a timestamp and returns a human-readable relative time.
@@ -557,5 +553,14 @@ func (m *Model) HelpBindings() []key.Binding {
 		key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "activity")),
 		key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "details")),
 		key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
+	}
+}
+
+// FullHelpBindings returns extra keybindings only shown in the expanded help view.
+func (m *Model) FullHelpBindings() []key.Binding {
+	return []key.Binding{
+		key.NewBinding(key.WithKeys("shift+f"), key.WithHelp("shift+f", "filter prev")),
+		key.NewBinding(key.WithKeys("]"), key.WithHelp("]", "next page")),
+		key.NewBinding(key.WithKeys("["), key.WithHelp("[", "prev page")),
 	}
 }

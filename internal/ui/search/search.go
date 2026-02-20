@@ -194,7 +194,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		switch msg.String() {
+		switch strings.ToLower(msg.String()) {
 		case "enter":
 			row := m.table.SelectedRow()
 			if row != nil {

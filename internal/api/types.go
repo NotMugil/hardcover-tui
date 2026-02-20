@@ -1,6 +1,9 @@
 package api
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // StatusID represents a reading status.
 type StatusID int
@@ -350,14 +353,59 @@ func (g Goal) Remaining() int {
 
 // Activity represents a user activity event.
 type Activity struct {
-	ID               int           `json:"id" graphql:"id"`
-	Event            string        `json:"event" graphql:"event"`
-	BookID           *int          `json:"book_id" graphql:"book_id"`
-	LikesCount       int           `json:"likes_count" graphql:"likes_count"`
-	PrivacySettingID int           `json:"privacy_setting_id" graphql:"privacy_setting_id"`
-	CreatedAt        string        `json:"created_at" graphql:"created_at"`
-	Book             *Book         `json:"book" graphql:"book"`
-	User             *ActivityUser `json:"user" graphql:"user"`
+	ID               int              `json:"id" graphql:"id"`
+	Event            string           `json:"event" graphql:"event"`
+	Data             json.RawMessage  `json:"data" graphql:"data"`
+	BookID           *int             `json:"book_id" graphql:"book_id"`
+	LikesCount       int              `json:"likes_count" graphql:"likes_count"`
+	PrivacySettingID int              `json:"privacy_setting_id" graphql:"privacy_setting_id"`
+	CreatedAt        string           `json:"created_at" graphql:"created_at"`
+	Book             *Book            `json:"book" graphql:"book"`
+	User             *ActivityUser    `json:"user" graphql:"user"`
+}
+
+// ActivityDataUserBook holds parsed data for UserBookActivity events.
+type ActivityDataUserBook struct {
+	Rating   *string `json:"rating"`
+	Review   *string `json:"review"`
+	StatusID *int    `json:"statusId"`
+}
+
+// ActivityDataGoal holds parsed data for GoalActivity events.
+type ActivityDataGoal struct {
+	Goal            int     `json:"goal"`
+	Metric          string  `json:"metric"`
+	Progress        float64 `json:"progress"`
+	PercentComplete float64 `json:"percentComplete"`
+	Description     string  `json:"description"`
+}
+
+// ActivityDataList holds parsed data for ListActivity events.
+type ActivityDataList struct {
+	Name       string `json:"name"`
+	BooksCount int    `json:"booksCount"`
+}
+
+// ActivityDataPrompt holds parsed data for PromptActivity events.
+type ActivityDataPrompt struct {
+	Question string `json:"question"`
+}
+
+// ActivityParsedData contains the parsed data payload of an activity.
+type ActivityParsedData struct {
+	UserBook *ActivityDataUserBook `json:"userBook,omitempty"`
+	Goal     *ActivityDataGoal     `json:"goal,omitempty"`
+	List     *ActivityDataList     `json:"list,omitempty"`
+	Prompt   *ActivityDataPrompt   `json:"prompt,omitempty"`
+}
+
+// ParseData parses the JSON data field into a structured type.
+func (a Activity) ParseData() ActivityParsedData {
+	var d ActivityParsedData
+	if len(a.Data) > 0 {
+		_ = json.Unmarshal(a.Data, &d)
+	}
+	return d
 }
 
 // ActivityUser is a lightweight user attached to an activity.

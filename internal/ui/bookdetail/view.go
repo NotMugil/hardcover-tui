@@ -454,7 +454,7 @@ func (m *Model) HelpBindings() []key.Binding {
 			bindings = append(bindings,
 				key.NewBinding(key.WithKeys("x"), key.WithHelp("x", "remove from list")),
 				key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "next")),
-				key.NewBinding(key.WithKeys("N"), key.WithHelp("N", "prev")),
+				key.NewBinding(key.WithKeys("shift+n"), key.WithHelp("shift+n", "prev")),
 			)
 		}
 		return bindings
