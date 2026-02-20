@@ -13,6 +13,11 @@ An unofficial terminal user interface (TUI) client for [Hardcover.app](https://h
 
 Download the latest binary for your platform from the [Releases](https://github.com/NotMugil/hardcover-tui/releases) page.
 
+#### AUR Package
+```bash
+paru -S hardcover-tui-bin
+```
+
 #### From Source
 
 ```bash
