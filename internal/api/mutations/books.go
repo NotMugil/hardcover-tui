@@ -9,20 +9,6 @@ import (
 	"github.com/NotMugil/hardcover-tui/internal/api"
 )
 
-// Numeric is a custom GraphQL scalar that maps to Hardcover's "numeric" type.
-// The standard graphql.Float maps to "Float" which causes type mismatch errors.
-type Numeric float64
-
-// GetGraphQLType implements the go-graphql-client GraphQLType interface.
-func (n Numeric) GetGraphQLType() string { return "numeric" }
-
-// Date is a custom GraphQL scalar that maps to Hardcover's "date" type.
-// The standard graphql.String maps to "String" which causes type mismatch errors.
-type Date string
-
-// GetGraphQLType implements the go-graphql-client GraphQLType interface.
-func (d Date) GetGraphQLType() string { return "date" }
-
 // InsertUserBook adds a book to the user's library.
 func InsertUserBook(ctx context.Context, c *api.Client, bookID, statusID int) (*api.UserBook, error) {
 	var m struct {
@@ -84,7 +70,7 @@ func UpdateUserBookRating(ctx context.Context, c *api.Client, userBookID int, ra
 
 	vars := map[string]interface{}{
 		"id":     graphql.Int(userBookID),
-		"rating": Numeric(rating),
+		"rating": api.Numeric(rating),
 	}
 
 	return c.Mutate(ctx, &m, vars)
@@ -177,15 +163,15 @@ func UpdateUserBookReadDates(ctx context.Context, c *api.Client, readID int, sta
 
 	vars := map[string]interface{}{
 		"id":         graphql.Int(readID),
-		"startedAt":  (*Date)(nil),
-		"finishedAt": (*Date)(nil),
+		"startedAt":  (*api.Date)(nil),
+		"finishedAt": (*api.Date)(nil),
 	}
 	if startedAt != nil {
-		s := Date(*startedAt)
+		s := api.Date(*startedAt)
 		vars["startedAt"] = &s
 	}
 	if finishedAt != nil {
-		f := Date(*finishedAt)
+		f := api.Date(*finishedAt)
 		vars["finishedAt"] = &f
 	}
 

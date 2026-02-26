@@ -18,17 +18,19 @@ import (
 
 	"github.com/NotMugil/hardcover-tui/internal/api"
 	"github.com/NotMugil/hardcover-tui/internal/api/queries"
+	"github.com/NotMugil/hardcover-tui/internal/commands"
 	"github.com/NotMugil/hardcover-tui/internal/common"
+	"github.com/NotMugil/hardcover-tui/internal/components"
 	"github.com/NotMugil/hardcover-tui/internal/keystore"
-	"github.com/NotMugil/hardcover-tui/internal/ui/bookdetail"
-	"github.com/NotMugil/hardcover-tui/internal/ui/home"
-	"github.com/NotMugil/hardcover-tui/internal/ui/journal"
-	"github.com/NotMugil/hardcover-tui/internal/ui/lists"
-	"github.com/NotMugil/hardcover-tui/internal/ui/progress"
-	"github.com/NotMugil/hardcover-tui/internal/ui/review"
-	"github.com/NotMugil/hardcover-tui/internal/ui/search"
-	"github.com/NotMugil/hardcover-tui/internal/ui/setup"
-	"github.com/NotMugil/hardcover-tui/internal/ui/stats"
+	"github.com/NotMugil/hardcover-tui/internal/screens/bookdetail"
+	"github.com/NotMugil/hardcover-tui/internal/screens/home"
+	"github.com/NotMugil/hardcover-tui/internal/screens/journal"
+	"github.com/NotMugil/hardcover-tui/internal/screens/lists"
+	"github.com/NotMugil/hardcover-tui/internal/screens/progress"
+	"github.com/NotMugil/hardcover-tui/internal/screens/review"
+	"github.com/NotMugil/hardcover-tui/internal/screens/search"
+	"github.com/NotMugil/hardcover-tui/internal/screens/setup"
+	"github.com/NotMugil/hardcover-tui/internal/screens/stats"
 )
 
 // Screen is an interface that all screens implement.
@@ -82,9 +84,9 @@ type Model struct {
 	width      int
 	height     int
 	activeTab  int
-	confirm    common.ConfirmState
+	confirm    components.ConfirmState
 	alert      bubbleup.AlertModel
-	loader     common.Loader
+	loader     components.Loader
 	tabLoading bool
 }
 
@@ -115,7 +117,7 @@ func New() Model {
 		WithUnicodePrefix()
 
 	alertModel.RegisterNewAlertType(bubbleup.AlertDefinition{
-		Key:       string(common.NotifySuccess),
+		Key:       string(components.NotifySuccess),
 		ForeColor: "#10B981", // ColorSuccess
 		Prefix:    "\u2714",  // checkmark
 	})
@@ -129,7 +131,7 @@ func New() Model {
 		loading:   true,
 		setupMode: true,
 		alert:     alertModel,
-		loader:    common.NewLoader(),
+		loader:    components.NewLoader(),
 	}
 }
 
@@ -200,19 +202,23 @@ func (m Model) switchTab(idx int) (Model, tea.Cmd) {
 	return nm, tea.Batch(pushCmd, loaderCmd)
 }
 
+func (m Model) deps() commands.Deps {
+	return commands.Deps{Client: m.client, User: m.user}
+}
+
 // createTabScreen instantiates a screen for the given tab index.
 func (m Model) createTabScreen(idx int) Screen {
 	switch idx {
 	case 0:
-		return home.New(m.client, m.user)
+		return home.New(m.deps())
 	case 1:
-		return search.New(m.client, m.user)
+		return search.New(m.deps())
 	case 2:
-		return lists.New(m.client, m.user)
+		return lists.New(m.deps())
 	case 3:
-		return stats.New(m.client, m.user)
+		return stats.New(m.deps())
 	default:
-		return home.New(m.client, m.user)
+		return home.New(m.deps())
 	}
 }
 
@@ -223,12 +229,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	alertCmd = alertTickCmd
 
 	switch msg := msg.(type) {
-	case common.NotifyMsg:
+	case components.NotifyMsg:
 		alertKey := string(msg.Level)
 		newAlertCmd := m.alert.NewAlertCmd(alertKey, msg.Message)
 		return m, tea.Batch(alertCmd, newAlertCmd)
 
-	case common.LoaderFrameMsg:
+	case components.LoaderFrameMsg:
 		if m.tabLoading {
 			if top := m.nav.Top(); top != nil {
 				if l, ok := top.Model.(loadable); ok && l.Loaded() {
@@ -285,7 +291,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.setupMode = false
 		m.setupScr = nil
 		m.activeTab = 0
-		screen := home.New(m.client, m.user)
+		screen := home.New(m.deps())
 		m.tabLoading = true
 		loaderCmd := m.loader.Start()
 		nm, pushCmd := m.pushScreen("Home", screen)
@@ -301,7 +307,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.UserBook != nil {
 			title = msg.UserBook.Book.Title
 		}
-		screen := bookdetail.NewFromUserBook(m.client, m.user, msg.UserBook)
+		screen := bookdetail.NewFromUserBook(m.deps(), msg.UserBook)
 		nm, pushCmd := m.pushScreen(title, screen)
 		if !screen.Loaded() {
 			nm.tabLoading = true
@@ -311,7 +317,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return nm, pushCmd
 
 	case search.NavigateToBookMsg:
-		screen := bookdetail.NewFromBookID(m.client, m.user, msg.BookID)
+		screen := bookdetail.NewFromBookID(m.deps(), msg.BookID)
 		if len(msg.Genres) > 0 {
 			screen.SetGenres(msg.Genres)
 		}
@@ -328,7 +334,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for i, lb := range msg.ListBooks {
 			entries[i] = bookdetail.ListBookEntry{BookID: lb.BookID, Title: lb.Title}
 		}
-		screen := bookdetail.NewFromListBook(m.client, m.user, msg.BookID, entries, msg.ListIndex, msg.ListID, msg.ListName)
+		screen := bookdetail.NewFromListBook(m.deps(), msg.BookID, entries, msg.ListIndex, msg.ListID, msg.ListName)
 		nm, pushCmd := m.pushScreen("Book", screen)
 		if !screen.Loaded() {
 			nm.tabLoading = true
@@ -338,11 +344,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return nm, pushCmd
 
 	case bookdetail.NavigateToReviewMsg:
-		screen := review.New(m.client, m.user, msg.UserBook)
+		screen := review.New(m.deps(), msg.UserBook)
 		return m.pushScreen("Review", screen)
 
 	case bookdetail.NavigateToProgressMsg:
-		screen := progress.New(m.client, m.user, msg.UserBook)
+		screen := progress.New(m.deps(), msg.UserBook)
 		return m.pushScreen("Progress", screen)
 
 	case progress.NavigateBackMsg:
@@ -357,7 +363,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case bookdetail.NavigateToJournalMsg:
-		screen := journal.New(m.client, m.user, msg.UserBook)
+		screen := journal.New(m.deps(), msg.UserBook)
 		return m.pushScreen("Journal", screen)
 
 	case spinner.TickMsg:
@@ -451,7 +457,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.help.ShowAll = !m.help.ShowAll
 			return m, nil
 		case key.Matches(msg, common.Keys.Logout):
-			m.confirm = common.NewConfirm("Are you sure you want to log out?", "logout")
+			m.confirm = components.NewConfirm("Are you sure you want to log out?", "logout")
 			return m, nil
 		case key.Matches(msg, common.Keys.Library):
 			return m.switchTab(0)
@@ -525,7 +531,7 @@ func (m Model) View() string {
 	)
 
 	if m.confirm.Active {
-		fg := common.RenderConfirmOverlay(m.confirm.Message, m.confirm.Cursor, 50)
+		fg := components.RenderConfirmOverlay(m.confirm.Message, m.confirm.Cursor, 50)
 		output = overlay.Composite(fg, output, overlay.Center, overlay.Center, 0, 0)
 	}
 
