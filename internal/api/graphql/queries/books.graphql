@@ -1,0 +1,66 @@
+query SearchBooks($query: String!, $perPage: Int!) {
+  search(query: $query, per_page: $perPage, page: 1) {
+    results
+  }
+}
+
+query GetBookByID($id: Int!) {
+  books_by_pk(id: $id) {
+    id
+    title
+    subtitle
+    description
+    pages
+    rating
+    ratings_count
+    reviews_count
+    users_count
+    release_year
+    slug
+    audio_seconds
+    literary_type_id
+    image {
+      url
+      width
+      height
+    }
+    contributions {
+      author {
+        id
+        name
+        slug
+      }
+    }
+  }
+}
+
+query GetBookTags($bookId: Int!) {
+  books_by_pk(id: $bookId) {
+    taggings {
+      tag {
+        tag
+        tag_category_id
+      }
+    }
+  }
+}
+
+query GetBookReviews($bookId: Int!, $limit: Int!) {
+  user_books(
+    where: {book_id: {_eq: $bookId}, has_review: {_eq: true}}
+    order_by: {likes_count: desc}
+    limit: $limit
+  ) {
+    id
+    rating
+    review
+    review_has_spoilers
+    likes_count
+    created_at
+    user {
+      id
+      username
+      name
+    }
+  }
+}

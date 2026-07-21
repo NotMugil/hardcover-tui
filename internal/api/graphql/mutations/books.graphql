@@ -1,0 +1,54 @@
+mutation InsertUserBook($bookId: Int!, $statusId: Int!) {
+  insert_user_book(object: {book_id: $bookId, status_id: $statusId}) {
+    id
+    error
+  }
+}
+
+mutation UpdateUserBookStatus($id: Int!, $statusId: Int!) {
+  update_user_book(id: $id, object: {status_id: $statusId}) {
+    id
+    error
+  }
+}
+
+mutation UpdateUserBookRating($id: Int!, $rating: numeric!) {
+  update_user_book(id: $id, object: {rating: $rating}) {
+    id
+    error
+  }
+}
+
+mutation UpdateUserBookReview($id: Int!, $review: jsonb!, $spoilers: Boolean!) {
+  update_user_book(id: $id, object: {review_slate: $review, review_has_spoilers: $spoilers}) {
+    id
+    error
+  }
+}
+
+mutation DeleteUserBook($id: Int!) {
+  delete_user_book(id: $id) {
+    id
+  }
+}
+
+mutation InsertUserBookRead($userBookId: Int!, $startedAt: date, $progressPages: Int) {
+  insert_user_book_read(user_book_id: $userBookId, user_book_read: {started_at: $startedAt, progress_pages: $progressPages}) {
+    id
+    error
+  }
+}
+
+mutation UpdateUserBookRead($id: Int!, $progressPages: Int) {
+  update_user_book_read(id: $id, object: {progress_pages: $progressPages}) {
+    id
+    error
+  }
+}
+
+mutation UpdateUserBookReadDates($id: Int!, $startedAt: date, $finishedAt: date) {
+  update_user_book_read(id: $id, object: {started_at: $startedAt, finished_at: $finishedAt}) {
+    id
+    error
+  }
+}

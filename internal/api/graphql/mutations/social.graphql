@@ -1,0 +1,19 @@
+mutation InsertReadingJournal($bookId: Int!, $event: String!, $entry: String, $actionAt: date, $privacySettingId: Int!, $tags: [BasicTag!]!) {
+  insert_reading_journal(object: {book_id: $bookId, event: $event, entry: $entry, action_at: $actionAt, privacy_setting_id: $privacySettingId, tags: $tags}) {
+    id
+    errors
+  }
+}
+
+mutation UpdateReadingJournal($id: Int!, $entry: String) {
+  update_reading_journal(id: $id, object: {entry: $entry}) {
+    id
+    errors
+  }
+}
+
+mutation DeleteReadingJournal($id: Int!) {
+  delete_reading_journal(id: $id) {
+    id
+  }
+}

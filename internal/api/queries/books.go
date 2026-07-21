@@ -6,36 +6,45 @@ import (
 	"fmt"
 	"strings"
 
-	graphql "github.com/hasura/go-graphql-client"
-
 	"github.com/NotMugil/hardcover-tui/internal/api"
+	graphql "github.com/hasura/go-graphql-client"
 )
 
-// Search performs a book search using the Hardcover search API.
-// Follows the approach from github.com/Kameleon21/oku: inline query values,
-// input sanitization, and search fields/weights for better relevance.
+// Search performs a book search using the Hardcover search API with safe GraphQL variable binding
+// and resilient Typesense response unmarshaling.
 func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error) {
-	sanitized := strings.ReplaceAll(query, `\`, `\\`)
-	sanitized = strings.ReplaceAll(sanitized, `"`, `\"`)
-
-	gqlQuery := fmt.Sprintf(`query {
-		search(query: "%s", query_type: "Book", per_page: 20, page: 1, fields: "title,author_names", weights: "7,3") {
-			results
-		}
-	}`, sanitized)
-
-	raw, err := c.ExecRaw(ctx, gqlQuery, nil)
-	if err != nil {
-		return nil, fmt.Errorf("search: %w", err)
+	if strings.TrimSpace(query) == "" {
+		return nil, nil
 	}
 
+	const gqlQuery = `query ($query: String!, $perPage: Int!) {
+		search(query: $query, per_page: $perPage, page: 1) {
+			results
+		}
+	}`
+
+	vars := map[string]any{
+		"query":   query,
+		"perPage": 20,
+	}
+
+	raw, err := c.ExecRaw(ctx, gqlQuery, vars)
+	if err != nil {
+		return nil, fmt.Errorf("search API request failed: %w", err)
+	}
+
+	return ParseSearchResults(raw)
+}
+
+// ParseSearchResults extracts and normalizes Book records from raw Search GraphQL JSON responses.
+func ParseSearchResults(raw []byte) ([]api.Book, error) {
 	var resp struct {
 		Search struct {
 			Results json.RawMessage `json:"results"`
 		} `json:"search"`
 	}
 	if err := json.Unmarshal(raw, &resp); err != nil {
-		return nil, fmt.Errorf("parse search response: %w", err)
+		return nil, fmt.Errorf("parse search response container: %w", err)
 	}
 
 	if len(resp.Search.Results) == 0 || string(resp.Search.Results) == "null" {
@@ -44,6 +53,7 @@ func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error
 
 	results := resp.Search.Results
 
+	// If results is double-encoded JSON string, unquote it
 	if len(results) > 0 && results[0] == '"' {
 		var inner string
 		if err := json.Unmarshal(results, &inner); err == nil {
@@ -51,22 +61,25 @@ func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error
 		}
 	}
 
-	type searchHit struct {
-		Document struct {
-			ID           json.Number `json:"id"`
-			Title        string      `json:"title"`
-			Slug         string      `json:"slug"`
-			AuthorNames  []string    `json:"author_names"`
-			Pages        json.Number `json:"pages"`
-			Rating       float64     `json:"rating"`
-			UsersCount   int         `json:"users_count"`
-			ReleaseYear  int         `json:"release_year"`
-			Genres       []string    `json:"genres"`
-			Description  string      `json:"description"`
-			HasAudiobook bool        `json:"has_audiobook"`
-			HasEbook     bool        `json:"has_ebook"`
-		} `json:"document"`
+	type searchHitDoc struct {
+		ID           json.Number `json:"id"`
+		Title        string      `json:"title"`
+		Slug         string      `json:"slug"`
+		AuthorNames  []string    `json:"author_names"`
+		Pages        json.Number `json:"pages"`
+		Rating       float64     `json:"rating"`
+		UsersCount   int         `json:"users_count"`
+		ReleaseYear  int         `json:"release_year"`
+		Genres       []string    `json:"genres"`
+		Description  string      `json:"description"`
+		HasAudiobook bool        `json:"has_audiobook"`
+		HasEbook     bool        `json:"has_ebook"`
 	}
+
+	type searchHit struct {
+		Document searchHitDoc `json:"document"`
+	}
+
 	type hitsContainer struct {
 		Hits []searchHit `json:"hits"`
 	}
@@ -145,7 +158,7 @@ func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error
 	return books, nil
 }
 
-// GetBookByID fetches a book by its primary key (book ID, not user_book ID).
+// GetBookByID fetches a book by its primary key.
 func GetBookByID(ctx context.Context, c *api.Client, bookID int) (*api.Book, error) {
 	var q struct {
 		Book *struct {
@@ -212,7 +225,7 @@ func GetBookByID(ctx context.Context, c *api.Client, bookID int) (*api.Book, err
 	return b, nil
 }
 
-// GetBookTags fetches genres, moods, and content warnings for a book via ExecRaw.
+// GetBookTags fetches genres, moods, and content warnings for a book.
 func GetBookTags(ctx context.Context, c *api.Client, bookID int) (genres, moods, contentWarnings []api.TagItem, err error) {
 	const gqlQuery = `query ($bookId: Int!) {
 		books_by_pk(id: $bookId) {

@@ -1,0 +1,37 @@
+query GetUserBooksForStats($userID: Int!) {
+  user_books(where: {user_id: {_eq: $userID}}, limit: 500) {
+    status_id
+    book {
+      literary_type_id
+      taggings(distinct_on: [tag_id]) {
+        tag {
+          tag
+          tag_category_id
+        }
+      }
+    }
+    user_book_reads(limit: 1, order_by: {id: desc}) {
+      edition {
+        edition_format
+      }
+    }
+  }
+}
+
+query GetReadingHistory($userID: Int!) {
+  user_book_reads(
+    where: {
+      user_book: {user_id: {_eq: $userID}}
+      finished_at: {_is_null: false}
+    }
+    order_by: {finished_at: asc}
+    limit: 1000
+  ) {
+    finished_at
+    progress_pages
+    edition {
+      edition_format
+      pages
+    }
+  }
+}

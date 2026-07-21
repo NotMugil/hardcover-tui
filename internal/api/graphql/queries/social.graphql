@@ -1,0 +1,117 @@
+query GetActivities($userID: Int!, $limit: Int!) {
+  activities(
+    where: {user_id: {_eq: $userID}}
+    order_by: {created_at: desc}
+    limit: $limit
+  ) {
+    id
+    event
+    data
+    book_id
+    likes_count
+    privacy_setting_id
+    created_at
+    book {
+      id
+      title
+      image {
+        url
+      }
+    }
+    user {
+      id
+      username
+      name
+    }
+  }
+}
+
+query GetLists($userID: Int!) {
+  lists(where: {user_id: {_eq: $userID}}, order_by: {updated_at: desc}) {
+    id
+    name
+    description
+    books_count
+    likes_count
+    public
+    ranked
+    privacy_setting_id
+    slug
+    user_id
+    created_at
+    updated_at
+  }
+}
+
+query GetListBooks($listID: Int!) {
+  list_books(where: {list_id: {_eq: $listID}}, order_by: {position: asc}) {
+    id
+    list_id
+    book_id
+    position
+    date_added
+    book {
+      id
+      title
+      subtitle
+      description
+      pages
+      rating
+      ratings_count
+      reviews_count
+      users_count
+      release_year
+      slug
+      audio_seconds
+      image {
+        url
+      }
+      contributions {
+        author {
+          id
+          name
+          slug
+        }
+      }
+    }
+  }
+}
+
+query GetGoals($userID: Int!) {
+  goals(where: {user_id: {_eq: $userID}, archived: {_eq: false}}, order_by: {start_date: desc}) {
+    id
+    goal
+    metric
+    progress
+    start_date
+    end_date
+    state
+    description
+    archived
+    completed_at
+    privacy_setting_id
+    user_id
+  }
+}
+
+query GetReadingJournals($userID: Int!, $limit: Int!) {
+  reading_journals(where: {user_id: {_eq: $userID}}, order_by: {action_at: desc}, limit: $limit) {
+    id
+    event
+    entry
+    action_at
+    book_id
+    edition_id
+    privacy_setting_id
+    likes_count
+    created_at
+    updated_at
+    book {
+      id
+      title
+      image {
+        url
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+model:
+  package: gen
+  filename: internal/api/gen/models.go
+client:
+  package: gen
+  filename: internal/api/gen/client.go
+models:
+  jsonb:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  json:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  numeric:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  timestamptz:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  timestamp:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  date:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  bigint:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  smallint:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  citext:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+  float8:
+    model:
+      - github.com/NotMugil/hardcover-tui/internal/api.RawMessage
+schema:
+  - schema.graphql
+query:
+  - internal/api/graphql/queries/*.graphql
+  - internal/api/graphql/mutations/*.graphql

@@ -1,0 +1,135 @@
+query GetMe {
+  me {
+    id
+    username
+    name
+    bio
+    location
+    link
+    flair
+    books_count
+    followers_count
+    followed_users_count
+    pro
+    pronoun_personal
+    pronoun_possessive
+    image {
+      url
+      width
+      height
+    }
+    created_at
+  }
+}
+
+query GetUserBooks($where: user_books_bool_exp, $limit: Int!, $offset: Int!) {
+  user_books(where: $where, order_by: {updated_at: desc}, limit: $limit, offset: $offset) {
+    id
+    book_id
+    status_id
+    rating
+    review
+    has_review
+    date_added
+    read_count
+    owned
+    starred
+    likes_count
+    created_at
+    book {
+      id
+      title
+      subtitle
+      description
+      pages
+      rating
+      ratings_count
+      reviews_count
+      users_count
+      release_year
+      slug
+      audio_seconds
+      image {
+        url
+      }
+      contributions {
+        author {
+          id
+          name
+          slug
+        }
+      }
+    }
+    user_book_reads {
+      id
+      started_at
+      finished_at
+      progress_pages
+      progress_seconds
+      edition_id
+    }
+  }
+}
+
+query GetUserBookByPK($id: Int!) {
+  user_books_by_pk(id: $id) {
+    id
+    book_id
+    status_id
+    rating
+    review
+    review_has_spoilers
+    has_review
+    date_added
+    read_count
+    owned
+    starred
+    likes_count
+    created_at
+    private_notes
+    privacy_setting_id
+    book {
+      id
+      title
+      subtitle
+      description
+      pages
+      rating
+      ratings_count
+      reviews_count
+      users_count
+      release_year
+      slug
+      audio_seconds
+      image {
+        url
+      }
+      contributions {
+        author {
+          id
+          name
+          slug
+        }
+      }
+    }
+    user_book_reads {
+      id
+      started_at
+      finished_at
+      progress_pages
+      progress_seconds
+      edition_id
+    }
+  }
+}
+
+query GetUserBookAggregate($userID: Int!) {
+  user_books_aggregate(where: {user_id: {_eq: $userID}}) {
+    aggregate {
+      count
+      avg {
+        rating
+      }
+    }
+  }
+}
