@@ -2,178 +2,85 @@ package mutations
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-
-	graphql "github.com/hasura/go-graphql-client"
 
 	"github.com/NotMugil/hardcover-tui/internal/api"
 )
 
-// InsertUserBook adds a book to the user's library.
+// InsertUserBook adds a book to the user's library using gen.Client.
 func InsertUserBook(ctx context.Context, c *api.Client, bookID, statusID int) (*api.UserBook, error) {
-	var m struct {
-		InsertUserBook struct {
-			ID    *int    `graphql:"id"`
-			Error *string `graphql:"error"`
-		} `graphql:"insert_user_book(object: {book_id: $bookId, status_id: $statusId})"`
-	}
-
-	vars := map[string]interface{}{
-		"bookId":   graphql.Int(bookID),
-		"statusId": graphql.Int(statusID),
-	}
-
-	if err := c.Mutate(ctx, &m, vars); err != nil {
+	res, err := c.Gen.InsertUserBook(ctx, bookID, statusID)
+	if err != nil {
 		return nil, fmt.Errorf("insert user_book: %w", err)
 	}
 
-	if m.InsertUserBook.ID == nil {
+	if res.InsertUserBook.ID == nil {
 		errMsg := "unknown error"
-		if m.InsertUserBook.Error != nil {
-			errMsg = *m.InsertUserBook.Error
+		if res.InsertUserBook.Error != nil {
+			errMsg = *res.InsertUserBook.Error
 		}
 		return nil, fmt.Errorf("insert user_book: %s", errMsg)
 	}
 
 	return &api.UserBook{
-		ID:       *m.InsertUserBook.ID,
+		ID:       *res.InsertUserBook.ID,
 		BookID:   bookID,
 		StatusID: statusID,
 	}, nil
 }
 
-// UpdateUserBookStatus changes the reading status of a user book.
+// UpdateUserBookStatus changes the reading status of a user book using gen.Client.
 func UpdateUserBookStatus(ctx context.Context, c *api.Client, userBookID, statusID int) error {
-	var m struct {
-		UpdateUserBook struct {
-			ID    *int    `graphql:"id"`
-			Error *string `graphql:"error"`
-		} `graphql:"update_user_book(id: $id, object: {status_id: $statusId})"`
-	}
-
-	vars := map[string]interface{}{
-		"id":       graphql.Int(userBookID),
-		"statusId": graphql.Int(statusID),
-	}
-
-	return c.Mutate(ctx, &m, vars)
+	_, err := c.Gen.UpdateUserBookStatus(ctx, userBookID, statusID)
+	return err
 }
 
-// UpdateUserBookRating updates the rating for a user book.
+// UpdateUserBookRating updates the rating for a user book using gen.Client.
 func UpdateUserBookRating(ctx context.Context, c *api.Client, userBookID int, rating float64) error {
-	var m struct {
-		UpdateUserBook struct {
-			ID    *int    `graphql:"id"`
-			Error *string `graphql:"error"`
-		} `graphql:"update_user_book(id: $id, object: {rating: $rating})"`
-	}
-
-	vars := map[string]interface{}{
-		"id":     graphql.Int(userBookID),
-		"rating": api.Numeric(rating),
-	}
-
-	return c.Mutate(ctx, &m, vars)
+	rawRating := json.RawMessage(fmt.Sprintf("%f", rating))
+	_, err := c.Gen.UpdateUserBookRating(ctx, userBookID, rawRating)
+	return err
 }
 
-// UpdateUserBookReview updates the review for a user book.
+// UpdateUserBookReview updates the review for a user book using gen.Client.
 func UpdateUserBookReview(ctx context.Context, c *api.Client, userBookID int, review string, hasSpoilers bool) error {
-	var m struct {
-		UpdateUserBook struct {
-			ID    *int    `graphql:"id"`
-			Error *string `graphql:"error"`
-		} `graphql:"update_user_book(id: $id, object: {review_raw: $review, review_has_spoilers: $spoilers})"`
-	}
-
-	vars := map[string]interface{}{
-		"id":       graphql.Int(userBookID),
-		"review":   graphql.String(review),
-		"spoilers": graphql.Boolean(hasSpoilers),
-	}
-
-	return c.Mutate(ctx, &m, vars)
+	rawReview, _ := json.Marshal(review)
+	_, err := c.Gen.UpdateUserBookReview(ctx, userBookID, rawReview, hasSpoilers)
+	return err
 }
 
-// DeleteUserBook removes a book from the user's library.
+// DeleteUserBook removes a book from the user's library using gen.Client.
 func DeleteUserBook(ctx context.Context, c *api.Client, userBookID int) error {
-	var m struct {
-		DeleteUserBook struct {
-			ID *int `graphql:"id"`
-		} `graphql:"delete_user_book(id: $id)"`
-	}
-
-	vars := map[string]interface{}{
-		"id": graphql.Int(userBookID),
-	}
-
-	return c.Mutate(ctx, &m, vars)
+	_, err := c.Gen.DeleteUserBook(ctx, userBookID)
+	return err
 }
 
-// InsertUserBookRead creates a new read-through entry.
+// InsertUserBookRead creates a new read-through entry using gen.Client.
 func InsertUserBookRead(ctx context.Context, c *api.Client, userBookID int, startedAt, finishedAt *string) error {
-	var m struct {
-		InsertUserBookRead struct {
-			ID    *int    `graphql:"id"`
-			Error *string `graphql:"error"`
-		} `graphql:"insert_user_book_read(user_book_id: $userBookId, user_book_read: {started_at: $startedAt, progress_pages: $progressPages})"`
-	}
-
-	vars := map[string]interface{}{
-		"userBookId":    graphql.Int(userBookID),
-		"startedAt":     (*graphql.String)(nil),
-		"progressPages": (*graphql.Int)(nil),
-	}
+	var rawStarted json.RawMessage
 	if startedAt != nil {
-		s := graphql.String(*startedAt)
-		vars["startedAt"] = &s
+		rawStarted, _ = json.Marshal(*startedAt)
 	}
-
-	return c.Mutate(ctx, &m, vars)
+	_, err := c.Gen.InsertUserBookRead(ctx, userBookID, rawStarted, nil)
+	return err
 }
 
-// UpdateUserBookRead updates a read-through entry.
+// UpdateUserBookRead updates a read-through entry using gen.Client.
 func UpdateUserBookRead(ctx context.Context, c *api.Client, readID int, progressPages *int) error {
-	var m struct {
-		UpdateUserBookRead struct {
-			ID    *int    `graphql:"id"`
-			Error *string `graphql:"error"`
-		} `graphql:"update_user_book_read(id: $id, object: {progress_pages: $progressPages})"`
-	}
-
-	vars := map[string]interface{}{
-		"id":            graphql.Int(readID),
-		"progressPages": (*graphql.Int)(nil),
-	}
-	if progressPages != nil {
-		p := graphql.Int(*progressPages)
-		vars["progressPages"] = &p
-	}
-
-	return c.Mutate(ctx, &m, vars)
+	_, err := c.Gen.UpdateUserBookRead(ctx, readID, progressPages)
+	return err
 }
 
-// UpdateUserBookReadDates updates started_at and finished_at on a read entry.
+// UpdateUserBookReadDates updates started_at and finished_at on a read entry using gen.Client.
 func UpdateUserBookReadDates(ctx context.Context, c *api.Client, readID int, startedAt, finishedAt *string) error {
-	var m struct {
-		UpdateUserBookRead struct {
-			ID    *int    `graphql:"id"`
-			Error *string `graphql:"error"`
-		} `graphql:"update_user_book_read(id: $id, object: {started_at: $startedAt, finished_at: $finishedAt})"`
-	}
-
-	vars := map[string]interface{}{
-		"id":         graphql.Int(readID),
-		"startedAt":  (*api.Date)(nil),
-		"finishedAt": (*api.Date)(nil),
-	}
+	var rawStarted, rawFinished json.RawMessage
 	if startedAt != nil {
-		s := api.Date(*startedAt)
-		vars["startedAt"] = &s
+		rawStarted, _ = json.Marshal(*startedAt)
 	}
 	if finishedAt != nil {
-		f := api.Date(*finishedAt)
-		vars["finishedAt"] = &f
+		rawFinished, _ = json.Marshal(*finishedAt)
 	}
-
-	return c.Mutate(ctx, &m, vars)
+	_, err := c.Gen.UpdateUserBookReadDates(ctx, readID, rawStarted, rawFinished)
+	return err
 }

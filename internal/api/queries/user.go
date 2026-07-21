@@ -2,47 +2,28 @@ package queries
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
-	graphql "github.com/hasura/go-graphql-client"
-
 	"github.com/NotMugil/hardcover-tui/internal/api"
+	"github.com/NotMugil/hardcover-tui/internal/api/gen"
 )
 
 // GetMe fetches the authenticated user's profile.
 func GetMe(ctx context.Context, c *api.Client) (*api.User, error) {
-	var q struct {
-		Me []struct {
-			ID                 int        `graphql:"id"`
-			Username           string     `graphql:"username"`
-			Name               *string    `graphql:"name"`
-			Bio                *string    `graphql:"bio"`
-			Location           *string    `graphql:"location"`
-			Link               *string    `graphql:"link"`
-			Flair              *string    `graphql:"flair"`
-			BooksCount         int        `graphql:"books_count"`
-			FollowersCount     int        `graphql:"followers_count"`
-			FollowedUsersCount int        `graphql:"followed_users_count"`
-			Pro                bool       `graphql:"pro"`
-			PronounPersonal    string     `graphql:"pronoun_personal"`
-			PronounPossessive  string     `graphql:"pronoun_possessive"`
-			Image              *api.Image `graphql:"image"`
-			CreatedAt          localTime  `graphql:"created_at"`
-		} `graphql:"me"`
-	}
-
-	if err := c.Query(ctx, &q, nil); err != nil {
+	res, err := c.Gen.GetMe(ctx)
+	if err != nil {
 		return nil, fmt.Errorf("query me: %w", err)
 	}
-	if len(q.Me) == 0 {
+	if len(res.Me) == 0 {
 		return nil, fmt.Errorf("not authenticated or no user found")
 	}
 
-	me := q.Me[0]
-	return &api.User{
+	me := res.Me[0]
+	u := &api.User{
 		ID:                 me.ID,
-		Username:           me.Username,
+		Username:           parseRawString(me.Username),
 		Name:               me.Name,
 		Bio:                me.Bio,
 		Location:           me.Location,
@@ -54,67 +35,34 @@ func GetMe(ctx context.Context, c *api.Client) (*api.User, error) {
 		Pro:                me.Pro,
 		PronounPersonal:    me.PronounPersonal,
 		PronounPossessive:  me.PronounPossessive,
-		Image:              me.Image,
-		CreatedAt:          me.CreatedAt.Time,
-	}, nil
+		CreatedAt:          parseRawTime(me.CreatedAt),
+	}
+	if me.Image != nil && me.Image.URL != nil {
+		u.Image = &api.Image{URL: *me.Image.URL}
+	}
+	return u, nil
 }
 
 // GetUserBooks fetches the user's books with optional status filter.
 func GetUserBooks(ctx context.Context, c *api.Client, userID int, statusID *int, limit, offset int) ([]api.UserBook, error) {
-	var q struct {
-		UserBooks []struct {
-			ID            int          `graphql:"id"`
-			BookID        int          `graphql:"book_id"`
-			StatusID      int          `graphql:"status_id"`
-			Rating        *float64     `graphql:"rating"`
-			Review        *string      `graphql:"review"`
-			HasReview     bool         `graphql:"has_review"`
-			DateAdded     string       `graphql:"date_added"`
-			ReadCount     int          `graphql:"read_count"`
-			Owned         bool         `graphql:"owned"`
-			Starred       bool         `graphql:"starred"`
-			LikesCount    int          `graphql:"likes_count"`
-			CreatedAt     string       `graphql:"created_at"`
-			Book          bookFragment `graphql:"book"`
-			UserBookReads []ubReadFrag `graphql:"user_book_reads"`
-		} `graphql:"user_books(where: $where, order_by: {updated_at: desc}, limit: $limit, offset: $offset)"`
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID: %d", userID)
 	}
-
-	where := map[string]interface{}{
-		"user_id": map[string]interface{}{"_eq": userID},
+	where := &gen.UserBooksBoolExp{
+		UserID: &gen.IntComparisonExp{Eq: &userID},
 	}
 	if statusID != nil {
-		where["status_id"] = map[string]interface{}{"_eq": *statusID}
+		where.StatusID = &gen.IntComparisonExp{Eq: statusID}
 	}
 
-	vars := map[string]interface{}{
-		"where":  user_books_bool_exp(where),
-		"limit":  graphql.Int(limit),
-		"offset": graphql.Int(offset),
-	}
-
-	if err := c.Query(ctx, &q, vars); err != nil {
+	res, err := c.Gen.GetUserBooks(ctx, where, limit, offset)
+	if err != nil {
 		return nil, fmt.Errorf("query user_books: %w", err)
 	}
 
-	books := make([]api.UserBook, len(q.UserBooks))
-	for i, ub := range q.UserBooks {
-		books[i] = api.UserBook{
-			ID:            ub.ID,
-			BookID:        ub.BookID,
-			StatusID:      ub.StatusID,
-			Rating:        ub.Rating,
-			Review:        ub.Review,
-			HasReview:     ub.HasReview,
-			DateAdded:     ub.DateAdded,
-			ReadCount:     ub.ReadCount,
-			Owned:         ub.Owned,
-			Starred:       ub.Starred,
-			LikesCount:    ub.LikesCount,
-			CreatedAt:     ub.CreatedAt,
-			Book:          ub.Book.toBook(),
-			UserBookReads: toReads(ub.UserBookReads),
-		}
+	books := make([]api.UserBook, len(res.UserBooks))
+	for i, ub := range res.UserBooks {
+		books[i] = mapUserBookFromGetUserBooks(ub)
 	}
 	return books, nil
 }
@@ -127,239 +75,301 @@ func GetCurrentlyReading(ctx context.Context, c *api.Client, userID int) ([]api.
 
 // GetUserBookByPK fetches a single user_book by primary key.
 func GetUserBookByPK(ctx context.Context, c *api.Client, id int) (*api.UserBook, error) {
-	var q struct {
-		UserBook *struct {
-			ID                int          `graphql:"id"`
-			BookID            int          `graphql:"book_id"`
-			StatusID          int          `graphql:"status_id"`
-			Rating            *float64     `graphql:"rating"`
-			Review            *string      `graphql:"review"`
-			ReviewHasSpoilers bool         `graphql:"review_has_spoilers"`
-			HasReview         bool         `graphql:"has_review"`
-			DateAdded         string       `graphql:"date_added"`
-			ReadCount         int          `graphql:"read_count"`
-			Owned             bool         `graphql:"owned"`
-			Starred           bool         `graphql:"starred"`
-			LikesCount        int          `graphql:"likes_count"`
-			CreatedAt         string       `graphql:"created_at"`
-			PrivateNotes      *string      `graphql:"private_notes"`
-			PrivacySettingID  int          `graphql:"privacy_setting_id"`
-			Book              bookFragment `graphql:"book"`
-			UserBookReads     []ubReadFrag `graphql:"user_book_reads"`
-		} `graphql:"user_books_by_pk(id: $id)"`
-	}
-
-	vars := map[string]interface{}{
-		"id": graphql.Int(id),
-	}
-
-	if err := c.Query(ctx, &q, vars); err != nil {
+	res, err := c.Gen.GetUserBookByPk(ctx, id)
+	if err != nil {
 		return nil, fmt.Errorf("query user_books_by_pk: %w", err)
 	}
-	if q.UserBook == nil {
+	if res.UserBooksByPk == nil {
 		return nil, fmt.Errorf("user book %d not found", id)
 	}
 
-	ub := q.UserBook
+	ub := res.UserBooksByPk
+	b := mapBookFromGetUserBookByPk(&ub.Book)
+
+	reads := make([]api.UserBookRead, len(ub.UserBookReads))
+	for i, r := range ub.UserBookReads {
+		reads[i] = api.UserBookRead{
+			ID:              r.ID,
+			StartedAt:       parseRawStringPtr(&r.StartedAt),
+			FinishedAt:      parseRawStringPtr(&r.FinishedAt),
+			ProgressPages:   r.ProgressPages,
+			ProgressSeconds: r.ProgressSeconds,
+			EditionID:       r.EditionID,
+		}
+	}
+
 	return &api.UserBook{
 		ID:                ub.ID,
 		BookID:            ub.BookID,
 		StatusID:          ub.StatusID,
-		Rating:            ub.Rating,
+		Rating:            parseRawFloat(&ub.Rating),
 		Review:            ub.Review,
 		ReviewHasSpoilers: ub.ReviewHasSpoilers,
 		HasReview:         ub.HasReview,
-		DateAdded:         ub.DateAdded,
+		DateAdded:         parseRawString(ub.DateAdded),
 		ReadCount:         ub.ReadCount,
 		Owned:             ub.Owned,
 		Starred:           ub.Starred,
 		LikesCount:        ub.LikesCount,
-		CreatedAt:         ub.CreatedAt,
+		CreatedAt:         parseRawString(ub.CreatedAt),
 		PrivateNotes:      ub.PrivateNotes,
 		PrivacySettingID:  ub.PrivacySettingID,
-		Book:              ub.Book.toBook(),
-		UserBookReads:     toReads(ub.UserBookReads),
+		Book:              b,
+		UserBookReads:     reads,
 	}, nil
 }
 
 // GetUserBookByBookID fetches a user's relationship with a specific book.
-// Returns nil (no error) if the user doesn't have this book in their library.
 func GetUserBookByBookID(ctx context.Context, c *api.Client, userID, bookID int) (*api.UserBook, error) {
-	var q struct {
-		UserBooks []struct {
-			ID            int          `graphql:"id"`
-			BookID        int          `graphql:"book_id"`
-			StatusID      int          `graphql:"status_id"`
-			Rating        *float64     `graphql:"rating"`
-			Review        *string      `graphql:"review"`
-			HasReview     bool         `graphql:"has_review"`
-			DateAdded     string       `graphql:"date_added"`
-			ReadCount     int          `graphql:"read_count"`
-			Owned         bool         `graphql:"owned"`
-			Starred       bool         `graphql:"starred"`
-			LikesCount    int          `graphql:"likes_count"`
-			CreatedAt     string       `graphql:"created_at"`
-			Book          bookFragment `graphql:"book"`
-			UserBookReads []ubReadFrag `graphql:"user_book_reads"`
-		} `graphql:"user_books(where: {user_id: {_eq: $userID}, book_id: {_eq: $bookID}}, limit: 1)"`
-	}
-
-	vars := map[string]interface{}{
-		"userID": graphql.Int(userID),
-		"bookID": graphql.Int(bookID),
-	}
-
-	if err := c.Query(ctx, &q, vars); err != nil {
+	res, err := c.Gen.GetUserBookByBookID(ctx, userID, bookID)
+	if err != nil {
 		return nil, fmt.Errorf("query user_books by book_id: %w", err)
 	}
-	if len(q.UserBooks) == 0 {
+	if len(res.UserBooks) == 0 {
 		return nil, nil
 	}
 
-	ub := q.UserBooks[0]
+	ub := res.UserBooks[0]
+	b := mapBookFromGetUserBookByBookID(&ub.Book)
+
+	reads := make([]api.UserBookRead, len(ub.UserBookReads))
+	for i, r := range ub.UserBookReads {
+		reads[i] = api.UserBookRead{
+			ID:              r.ID,
+			StartedAt:       parseRawStringPtr(&r.StartedAt),
+			FinishedAt:      parseRawStringPtr(&r.FinishedAt),
+			ProgressPages:   r.ProgressPages,
+			ProgressSeconds: r.ProgressSeconds,
+			EditionID:       r.EditionID,
+		}
+	}
+
 	return &api.UserBook{
 		ID:            ub.ID,
 		BookID:        ub.BookID,
 		StatusID:      ub.StatusID,
-		Rating:        ub.Rating,
+		Rating:        parseRawFloat(&ub.Rating),
 		Review:        ub.Review,
 		HasReview:     ub.HasReview,
-		DateAdded:     ub.DateAdded,
+		DateAdded:     parseRawString(ub.DateAdded),
 		ReadCount:     ub.ReadCount,
 		Owned:         ub.Owned,
 		Starred:       ub.Starred,
 		LikesCount:    ub.LikesCount,
-		CreatedAt:     ub.CreatedAt,
-		Book:          ub.Book.toBook(),
-		UserBookReads: toReads(ub.UserBookReads),
+		CreatedAt:     parseRawString(ub.CreatedAt),
+		Book:          b,
+		UserBookReads: reads,
 	}, nil
 }
 
 // GetUserBookStats fetches aggregate statistics for a user's books.
 func GetUserBookStats(ctx context.Context, c *api.Client, userID int) (*api.UserBookAggregate, error) {
-	var q struct {
-		Agg struct {
-			Aggregate struct {
-				Count int `graphql:"count"`
-				Avg   struct {
-					Rating *float64 `graphql:"rating"`
-				} `graphql:"avg"`
-			} `graphql:"aggregate"`
-		} `graphql:"user_books_aggregate(where: {user_id: {_eq: $userID}})"`
-	}
-
-	vars := map[string]interface{}{
-		"userID": graphql.Int(userID),
-	}
-
-	if err := c.Query(ctx, &q, vars); err != nil {
+	res, err := c.Gen.GetUserBookAggregate(ctx, userID)
+	if err != nil {
 		return nil, fmt.Errorf("query user_books_aggregate: %w", err)
 	}
 
 	agg := &api.UserBookAggregate{}
-	agg.Aggregate.Count = q.Agg.Aggregate.Count
-	agg.Aggregate.Avg.Rating = q.Agg.Aggregate.Avg.Rating
+	if res.UserBooksAggregate.Aggregate != nil {
+		agg.Aggregate.Count = res.UserBooksAggregate.Aggregate.Count
+		if res.UserBooksAggregate.Aggregate.Avg != nil {
+			agg.Aggregate.Avg.Rating = res.UserBooksAggregate.Aggregate.Avg.Rating
+		}
+	}
 	return agg, nil
 }
 
-// GetUserBookStatusCounts returns the number of books per status for a user.
+// GetUserBookStatusCounts returns the number of books per status for a user in a single query.
 func GetUserBookStatusCounts(ctx context.Context, c *api.Client, userID int) (map[api.StatusID]int, error) {
+	res, err := c.Gen.GetUserBookStatusIDs(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("query user_book status_ids: %w", err)
+	}
+
 	counts := make(map[api.StatusID]int)
 	for _, s := range api.AllStatuses() {
-		sid := int(s)
-		books, err := GetUserBooks(ctx, c, userID, &sid, 0, 0)
-		if err != nil {
-			return nil, err
-		}
-		counts[s] = len(books)
+		counts[s] = 0
 	}
+
+	for _, ub := range res.UserBooks {
+		counts[api.StatusID(ub.StatusID)]++
+	}
+
 	return counts, nil
 }
 
-// --- internal fragment types for queries ---
+// --- Internal Mapping Helpers ---
 
-type bookFragment struct {
-	ID            int        `graphql:"id"`
-	Title         string     `graphql:"title"`
-	Subtitle      *string    `graphql:"subtitle"`
-	Description   *string    `graphql:"description"`
-	Pages         *int       `graphql:"pages"`
-	Rating        *float64   `graphql:"rating"`
-	RatingsCount  int        `graphql:"ratings_count"`
-	ReviewsCount  int        `graphql:"reviews_count"`
-	UsersCount    int        `graphql:"users_count"`
-	ReleaseYear   *int       `graphql:"release_year"`
-	Slug          *string    `graphql:"slug"`
-	AudioSeconds  *int       `graphql:"audio_seconds"`
-	Image         *api.Image `graphql:"image"`
-	Contributions []struct {
-		Author struct {
-			ID   int    `graphql:"id"`
-			Name string `graphql:"name"`
-			Slug string `graphql:"slug"`
-		} `graphql:"author"`
-	} `graphql:"contributions"`
+func mapUserBookFromGetUserBooks(ub *gen.GetUserBooks_UserBooks) api.UserBook {
+	b := mapBookFromGetUserBooks(&ub.Book)
+	reads := make([]api.UserBookRead, len(ub.UserBookReads))
+	for i, r := range ub.UserBookReads {
+		reads[i] = api.UserBookRead{
+			ID:              r.ID,
+			StartedAt:       parseRawStringPtr(&r.StartedAt),
+			FinishedAt:      parseRawStringPtr(&r.FinishedAt),
+			ProgressPages:   r.ProgressPages,
+			ProgressSeconds: r.ProgressSeconds,
+			EditionID:       r.EditionID,
+		}
+	}
+
+	return api.UserBook{
+		ID:            ub.ID,
+		BookID:        ub.BookID,
+		StatusID:      ub.StatusID,
+		Rating:        parseRawFloat(&ub.Rating),
+		Review:        ub.Review,
+		HasReview:     ub.HasReview,
+		DateAdded:     parseRawString(ub.DateAdded),
+		ReadCount:     ub.ReadCount,
+		Owned:         ub.Owned,
+		Starred:       ub.Starred,
+		LikesCount:    ub.LikesCount,
+		CreatedAt:     parseRawString(ub.CreatedAt),
+		Book:          b,
+		UserBookReads: reads,
+	}
 }
 
-func (bf bookFragment) toBook() api.Book {
+func mapBookFromGetUserBooks(gb *gen.GetUserBooks_UserBooks_Book) api.Book {
 	b := api.Book{
-		ID:           bf.ID,
-		Title:        bf.Title,
-		Subtitle:     bf.Subtitle,
-		Description:  bf.Description,
-		Pages:        bf.Pages,
-		Rating:       bf.Rating,
-		RatingsCount: bf.RatingsCount,
-		ReviewsCount: bf.ReviewsCount,
-		UsersCount:   bf.UsersCount,
-		ReleaseYear:  bf.ReleaseYear,
-		Slug:         bf.Slug,
-		AudioSeconds: bf.AudioSeconds,
-		Image:        bf.Image,
+		ID:           gb.ID,
+		Title:        parseStringPtr(gb.Title),
+		Subtitle:     gb.Subtitle,
+		Description:  gb.Description,
+		Pages:        gb.Pages,
+		Rating:       parseRawFloat(&gb.Rating),
+		RatingsCount: gb.RatingsCount,
+		ReviewsCount: gb.ReviewsCount,
+		UsersCount:   gb.UsersCount,
+		ReleaseYear:  gb.ReleaseYear,
+		Slug:         gb.Slug,
+		AudioSeconds: gb.AudioSeconds,
 	}
-	for _, ct := range bf.Contributions {
-		b.Contributions = append(b.Contributions, api.Contribution{
-			Author: api.Author{
-				ID:   ct.Author.ID,
-				Name: ct.Author.Name,
-				Slug: ct.Author.Slug,
-			},
-		})
+	if gb.Image != nil && gb.Image.URL != nil {
+		b.Image = &api.Image{URL: *gb.Image.URL}
+	}
+	for _, ct := range gb.Contributions {
+		if ct.Author != nil {
+			b.Contributions = append(b.Contributions, api.Contribution{
+				Author: api.Author{
+					ID:   ct.Author.ID,
+					Name: ct.Author.Name,
+					Slug: parseStringPtr(ct.Author.Slug),
+				},
+			})
+		}
 	}
 	return b
 }
 
-type ubReadFrag struct {
-	ID              int     `graphql:"id"`
-	StartedAt       *string `graphql:"started_at"`
-	FinishedAt      *string `graphql:"finished_at"`
-	ProgressPages   *int    `graphql:"progress_pages"`
-	ProgressSeconds *int    `graphql:"progress_seconds"`
-	EditionID       *int    `graphql:"edition_id"`
-}
-
-func toReads(frags []ubReadFrag) []api.UserBookRead {
-	reads := make([]api.UserBookRead, len(frags))
-	for i, f := range frags {
-		reads[i] = api.UserBookRead{
-			ID:              f.ID,
-			StartedAt:       f.StartedAt,
-			FinishedAt:      f.FinishedAt,
-			ProgressPages:   f.ProgressPages,
-			ProgressSeconds: f.ProgressSeconds,
-			EditionID:       f.EditionID,
+func mapBookFromGetUserBookByPk(gb *gen.GetUserBookByPK_UserBooksByPk_Book) api.Book {
+	b := api.Book{
+		ID:           gb.ID,
+		Title:        parseStringPtr(gb.Title),
+		Subtitle:     gb.Subtitle,
+		Description:  gb.Description,
+		Pages:        gb.Pages,
+		Rating:       parseRawFloat(&gb.Rating),
+		RatingsCount: gb.RatingsCount,
+		ReviewsCount: gb.ReviewsCount,
+		UsersCount:   gb.UsersCount,
+		ReleaseYear:  gb.ReleaseYear,
+		Slug:         gb.Slug,
+		AudioSeconds: gb.AudioSeconds,
+	}
+	if gb.Image != nil && gb.Image.URL != nil {
+		b.Image = &api.Image{URL: *gb.Image.URL}
+	}
+	for _, ct := range gb.Contributions {
+		if ct.Author != nil {
+			b.Contributions = append(b.Contributions, api.Contribution{
+				Author: api.Author{
+					ID:   ct.Author.ID,
+					Name: ct.Author.Name,
+					Slug: parseStringPtr(ct.Author.Slug),
+				},
+			})
 		}
 	}
-	return reads
+	return b
 }
 
-// localTime helps parse the flexible timestamp format from the API.
-type localTime struct {
-	time.Time
+func mapBookFromGetUserBookByBookID(gb *gen.GetUserBookByBookID_UserBooks_Book) api.Book {
+	b := api.Book{
+		ID:           gb.ID,
+		Title:        parseStringPtr(gb.Title),
+		Subtitle:     gb.Subtitle,
+		Description:  gb.Description,
+		Pages:        gb.Pages,
+		Rating:       parseRawFloat(&gb.Rating),
+		RatingsCount: gb.RatingsCount,
+		ReviewsCount: gb.ReviewsCount,
+		UsersCount:   gb.UsersCount,
+		ReleaseYear:  gb.ReleaseYear,
+		Slug:         gb.Slug,
+		AudioSeconds: gb.AudioSeconds,
+	}
+	if gb.Image != nil && gb.Image.URL != nil {
+		b.Image = &api.Image{URL: *gb.Image.URL}
+	}
+	for _, ct := range gb.Contributions {
+		if ct.Author != nil {
+			b.Contributions = append(b.Contributions, api.Contribution{
+				Author: api.Author{
+					ID:   ct.Author.ID,
+					Name: ct.Author.Name,
+					Slug: parseStringPtr(ct.Author.Slug),
+				},
+			})
+		}
+	}
+	return b
 }
 
-func (t *localTime) UnmarshalJSON(data []byte) error {
-	s := string(data)
+func parseRawFloat(raw *json.RawMessage) *float64 {
+	if raw == nil || len(*raw) == 0 || string(*raw) == "null" {
+		return nil
+	}
+	var f float64
+	if err := json.Unmarshal(*raw, &f); err == nil {
+		return &f
+	}
+	var s string
+	if err := json.Unmarshal(*raw, &s); err == nil {
+		var parsed float64
+		if _, err := fmt.Sscanf(s, "%f", &parsed); err == nil {
+			return &parsed
+		}
+	}
+	return nil
+}
+
+func parseRawString(raw json.RawMessage) string {
+	if len(raw) == 0 || string(raw) == "null" {
+		return ""
+	}
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil {
+		return s
+	}
+	return string(raw)
+}
+
+func parseRawStringPtr(raw *json.RawMessage) *string {
+	if raw == nil || len(*raw) == 0 || string(*raw) == "null" {
+		return nil
+	}
+	s := parseRawString(*raw)
+	return &s
+}
+
+func parseRawTime(raw json.RawMessage) time.Time {
+	s := parseRawString(raw)
+	if s == "" {
+		return time.Time{}
+	}
 	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
 		s = s[1 : len(s)-1]
 	}
@@ -370,14 +380,15 @@ func (t *localTime) UnmarshalJSON(data []byte) error {
 		"2006-01-02",
 	} {
 		if parsed, err := time.Parse(format, s); err == nil {
-			t.Time = parsed
-			return nil
+			return parsed
 		}
 	}
-	return fmt.Errorf("unable to parse time: %s", s)
+	return time.Time{}
 }
 
-// user_books_bool_exp is a marker type for the user_books where clause.
-// The go-graphql-client derives the GraphQL variable type from the Go type name,
-// so this must match Hasura's expected input type exactly.
-type user_books_bool_exp map[string]interface{}
+func parseStringPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

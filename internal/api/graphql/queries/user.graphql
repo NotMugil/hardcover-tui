@@ -133,3 +133,59 @@ query GetUserBookAggregate($userID: Int!) {
     }
   }
 }
+
+query GetUserBookByBookID($userID: Int!, $bookID: Int!) {
+  user_books(where: {user_id: {_eq: $userID}, book_id: {_eq: $bookID}}, limit: 1) {
+    id
+    book_id
+    status_id
+    rating
+    review
+    has_review
+    date_added
+    read_count
+    owned
+    starred
+    likes_count
+    created_at
+    book {
+      id
+      title
+      subtitle
+      description
+      pages
+      rating
+      ratings_count
+      reviews_count
+      users_count
+      release_year
+      slug
+      audio_seconds
+      image {
+        url
+      }
+      contributions {
+        author {
+          id
+          name
+          slug
+        }
+      }
+    }
+    user_book_reads {
+      id
+      started_at
+      finished_at
+      progress_pages
+      progress_seconds
+      edition_id
+    }
+  }
+}
+
+query GetUserBookStatusIDs($userID: Int!) {
+  user_books(where: {user_id: {_eq: $userID}}) {
+    status_id
+  }
+}
+

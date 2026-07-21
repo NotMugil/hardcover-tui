@@ -1,13 +1,12 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	graphql "github.com/hasura/go-graphql-client"
+	"github.com/NotMugil/hardcover-tui/internal/api/gen"
 	"golang.org/x/time/rate"
 )
 
@@ -18,21 +17,26 @@ const (
 	requestTimeout  = 30 * time.Second
 )
 
-// Client wraps the GraphQL client with rate limiting and auth.
+// Client wraps the gqlgenc generated GraphQL client with rate limiting, auth, and query caching.
 type Client struct {
-	gql     *graphql.Client
+	Gen     *gen.Client
+	Cache   *QueryCache
 	limiter *rate.Limiter
 	token   string
 	mu      sync.RWMutex
 }
 
-// authTransport injects auth headers into every request.
+// authTransport injects auth headers and rate limiting into every request.
 type authTransport struct {
 	wrapped   http.RoundTripper
 	tokenFunc func() string
+	limiter   *rate.Limiter
 }
 
 func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if err := t.limiter.Wait(req.Context()); err != nil {
+		return nil, fmt.Errorf("rate limit: %w", err)
+	}
 	token := t.tokenFunc()
 	req.Header.Set("Authorization", token)
 	req.Header.Set("User-Agent", userAgent)
@@ -44,9 +48,11 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 // NewClient creates a new API client with the given auth token.
 // The token should include the "Bearer " prefix.
 func NewClient(token string) *Client {
+	limiter := rate.NewLimiter(rate.Every(time.Minute/requestsPerMin), 1)
 	c := &Client{
 		token:   token,
-		limiter: rate.NewLimiter(rate.Every(time.Minute/requestsPerMin), 1),
+		limiter: limiter,
+		Cache:   NewQueryCache(),
 	}
 
 	httpClient := &http.Client{
@@ -57,11 +63,12 @@ func NewClient(token string) *Client {
 				defer c.mu.RUnlock()
 				return c.token
 			},
+			limiter: limiter,
 			wrapped: http.DefaultTransport,
 		},
 	}
 
-	c.gql = graphql.NewClient(graphqlEndpoint, httpClient)
+	c.Gen = gen.NewClient(httpClient, graphqlEndpoint, nil)
 	return c
 }
 
@@ -72,26 +79,3 @@ func (c *Client) SetToken(token string) {
 	c.token = token
 }
 
-// Query executes a GraphQL query with rate limiting.
-func (c *Client) Query(ctx context.Context, q interface{}, variables map[string]interface{}) error {
-	if err := c.limiter.Wait(ctx); err != nil {
-		return fmt.Errorf("rate limit: %w", err)
-	}
-	return c.gql.Query(ctx, q, variables)
-}
-
-// Mutate executes a GraphQL mutation with rate limiting.
-func (c *Client) Mutate(ctx context.Context, m interface{}, variables map[string]interface{}) error {
-	if err := c.limiter.Wait(ctx); err != nil {
-		return fmt.Errorf("rate limit: %w", err)
-	}
-	return c.gql.Mutate(ctx, m, variables)
-}
-
-// ExecRaw executes a raw GraphQL query string with rate limiting.
-func (c *Client) ExecRaw(ctx context.Context, query string, variables map[string]any) ([]byte, error) {
-	if err := c.limiter.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("rate limit: %w", err)
-	}
-	return c.gql.ExecRaw(ctx, query, variables)
-}

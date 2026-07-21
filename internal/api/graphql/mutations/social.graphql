@@ -17,3 +17,42 @@ mutation DeleteReadingJournal($id: Int!) {
     id
   }
 }
+
+mutation InsertList($name: String!, $description: String, $privacySettingId: Int!) {
+  insert_list(object: {name: $name, description: $description, privacy_setting_id: $privacySettingId}) {
+    id
+    errors
+  }
+}
+
+mutation UpdateList($id: Int!, $name: String!, $description: String, $privacySettingId: Int!) {
+  update_list(id: $id, object: {name: $name, description: $description, privacy_setting_id: $privacySettingId}) {
+    id
+    errors
+  }
+}
+
+mutation DeleteList($id: Int!) {
+  delete_list(id: $id) {
+    success
+  }
+}
+
+mutation InsertListBook($listId: Int!, $bookId: Int!, $position: Int!) {
+  insert_list_book(object: {list_id: $listId, book_id: $bookId, position: $position}) {
+    id
+  }
+}
+
+mutation DeleteListBook($id: Int!) {
+  delete_list_book(id: $id) {
+    id
+  }
+}
+
+mutation UpdateUserProfile($name: String, $bio: String, $location: String) {
+  update_user(user: {name: $name, bio: $bio, location: $location}) {
+    id
+    errors
+  }
+}

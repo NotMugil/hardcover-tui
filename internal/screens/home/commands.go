@@ -2,6 +2,7 @@ package home
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,6 +25,9 @@ func (m *Model) loadInitial() tea.Cmd {
 	page := m.page
 	pageSize := m.pageSize
 	return func() tea.Msg {
+		if user == nil || user.ID <= 0 {
+			return booksLoadedMsg{err: fmt.Errorf("user profile not loaded")}
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
@@ -58,6 +62,9 @@ func (m *Model) loadBooksOnly() tea.Cmd {
 	page := m.page
 	pageSize := m.pageSize
 	return func() tea.Msg {
+		if user == nil || user.ID <= 0 {
+			return booksOnlyLoadedMsg{err: fmt.Errorf("user profile not loaded")}
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
@@ -76,6 +83,9 @@ func (m *Model) loadActivities() tea.Cmd {
 	user := m.deps.User
 	af := m.activityFilter
 	return func() tea.Msg {
+		if user == nil || user.ID <= 0 {
+			return activitiesLoadedMsg{err: fmt.Errorf("user profile not loaded")}
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		var activities []api.Activity

@@ -88,6 +88,7 @@ type Model struct {
 	alert      bubbleup.AlertModel
 	loader     components.Loader
 	tabLoading bool
+	tabScreens map[int]Screen
 }
 
 // keyringCheckMsg is returned after checking the keyring for an API key.
@@ -132,6 +133,7 @@ func New() Model {
 		setupMode: true,
 		alert:     alertModel,
 		loader:    components.NewLoader(),
+		tabScreens: make(map[int]Screen),
 	}
 }
 
@@ -190,7 +192,15 @@ func (m Model) switchTab(idx int) (Model, tea.Cmd) {
 	}
 	m.activeTab = idx
 	_ = m.nav.Clear()
-	screen := m.createTabScreen(idx)
+
+	screen, exists := m.tabScreens[idx]
+	if !exists {
+		screen = m.createTabScreen(idx)
+		if m.tabScreens == nil {
+			m.tabScreens = make(map[int]Screen)
+		}
+		m.tabScreens[idx] = screen
+	}
 
 	if l, ok := screen.(loadable); ok && l.Loaded() {
 		return m.pushScreen(navTabs[idx].name, screen)
@@ -494,6 +504,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if m.width > 0 && m.height > 0 && (m.width < 60 || m.height < 15) {
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
+			common.ErrorStyle.Render(fmt.Sprintf("Terminal window too small (%dx%d, min 60x15 required)", m.width, m.height)),
+		)
+	}
+
 	if m.loading {
 		return common.AppStyle.Render(
 			fmt.Sprintf("\n  %s Loading...\n", m.spinner.View()),
@@ -553,6 +569,22 @@ func (m Model) renderNav() string {
 		items = append(items, zone.Mark(t.zoneID, rendered))
 	}
 	tabs := lipgloss.JoinHorizontal(lipgloss.Top, items...)
+
+	var modeBadge string
+	if top := m.nav.Top(); top != nil {
+		if f, ok := top.Model.(inputFocusable); ok && f.InputFocused() {
+			if m.activeTab == 1 {
+				modeBadge = common.ActiveTabStyle.Render("[SEARCH]")
+			} else {
+				modeBadge = common.ActiveTabStyle.Render("[FILTER]")
+			}
+		} else {
+			modeBadge = common.InactiveTabStyle.Render("[NORMAL]")
+		}
+	}
+	if modeBadge != "" {
+		tabs += " " + modeBadge
+	}
 
 	hs := common.HelpStyles()
 	shortcuts := common.HelpStyle.Render(

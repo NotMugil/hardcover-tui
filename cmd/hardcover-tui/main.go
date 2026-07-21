@@ -18,6 +18,10 @@ func main() {
 		os.Exit(0)
 	}
 
+	if len(os.Args) > 1 && handleAuthCommand(os.Args[1:]) {
+		os.Exit(0)
+	}
+
 	zone.NewGlobal()
 	p := tea.NewProgram(app.New(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {

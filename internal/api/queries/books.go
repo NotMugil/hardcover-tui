@@ -7,33 +7,25 @@ import (
 	"strings"
 
 	"github.com/NotMugil/hardcover-tui/internal/api"
-	graphql "github.com/hasura/go-graphql-client"
 )
 
 // Search performs a book search using the Hardcover search API with safe GraphQL variable binding
-// and resilient Typesense response unmarshaling.
+// and resilient Typesense response unmarshaling via gen.Client.
 func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error) {
 	if strings.TrimSpace(query) == "" {
 		return nil, nil
 	}
 
-	const gqlQuery = `query ($query: String!, $perPage: Int!) {
-		search(query: $query, per_page: $perPage, page: 1) {
-			results
-		}
-	}`
-
-	vars := map[string]any{
-		"query":   query,
-		"perPage": 20,
-	}
-
-	raw, err := c.ExecRaw(ctx, gqlQuery, vars)
+	res, err := c.Gen.SearchBooks(ctx, query, 20)
 	if err != nil {
 		return nil, fmt.Errorf("search API request failed: %w", err)
 	}
 
-	return ParseSearchResults(raw)
+	if res.Search == nil || len(res.Search.Results) == 0 {
+		return nil, nil
+	}
+
+	return ParseSearchResultsContainer(res.Search.Results)
 }
 
 // ParseSearchResults extracts and normalizes Book records from raw Search GraphQL JSON responses.
@@ -47,11 +39,14 @@ func ParseSearchResults(raw []byte) ([]api.Book, error) {
 		return nil, fmt.Errorf("parse search response container: %w", err)
 	}
 
-	if len(resp.Search.Results) == 0 || string(resp.Search.Results) == "null" {
+	return ParseSearchResultsContainer(resp.Search.Results)
+}
+
+// ParseSearchResultsContainer parses raw Typesense search result bytes.
+func ParseSearchResultsContainer(results json.RawMessage) ([]api.Book, error) {
+	if len(results) == 0 || string(results) == "null" {
 		return nil, nil
 	}
-
-	results := resp.Search.Results
 
 	// If results is double-encoded JSON string, unquote it
 	if len(results) > 0 && results[0] == '"' {
@@ -158,114 +153,61 @@ func ParseSearchResults(raw []byte) ([]api.Book, error) {
 	return books, nil
 }
 
-// GetBookByID fetches a book by its primary key.
+// GetBookByID fetches a book by its primary key using gen.Client.
 func GetBookByID(ctx context.Context, c *api.Client, bookID int) (*api.Book, error) {
-	var q struct {
-		Book *struct {
-			ID             int        `graphql:"id"`
-			Title          string     `graphql:"title"`
-			Subtitle       *string    `graphql:"subtitle"`
-			Description    *string    `graphql:"description"`
-			Pages          *int       `graphql:"pages"`
-			Rating         *float64   `graphql:"rating"`
-			RatingsCount   int        `graphql:"ratings_count"`
-			ReviewsCount   int        `graphql:"reviews_count"`
-			UsersCount     int        `graphql:"users_count"`
-			ReleaseYear    *int       `graphql:"release_year"`
-			Slug           *string    `graphql:"slug"`
-			AudioSeconds   *int       `graphql:"audio_seconds"`
-			LiteraryTypeID *int       `graphql:"literary_type_id"`
-			Image          *api.Image `graphql:"image"`
-			Contributions  []struct {
-				Author struct {
-					ID   int    `graphql:"id"`
-					Name string `graphql:"name"`
-					Slug string `graphql:"slug"`
-				} `graphql:"author"`
-			} `graphql:"contributions"`
-		} `graphql:"books_by_pk(id: $id)"`
-	}
-
-	vars := map[string]interface{}{
-		"id": graphql.Int(bookID),
-	}
-
-	if err := c.Query(ctx, &q, vars); err != nil {
+	res, err := c.Gen.GetBookByID(ctx, bookID)
+	if err != nil {
 		return nil, fmt.Errorf("query books_by_pk: %w", err)
 	}
-	if q.Book == nil {
+	if res.BooksByPk == nil {
 		return nil, fmt.Errorf("book %d not found", bookID)
 	}
 
+	bk := res.BooksByPk
 	b := &api.Book{
-		ID:             q.Book.ID,
-		Title:          q.Book.Title,
-		Subtitle:       q.Book.Subtitle,
-		Description:    q.Book.Description,
-		Pages:          q.Book.Pages,
-		Rating:         q.Book.Rating,
-		RatingsCount:   q.Book.RatingsCount,
-		ReviewsCount:   q.Book.ReviewsCount,
-		UsersCount:     q.Book.UsersCount,
-		ReleaseYear:    q.Book.ReleaseYear,
-		Slug:           q.Book.Slug,
-		AudioSeconds:   q.Book.AudioSeconds,
-		LiteraryTypeID: q.Book.LiteraryTypeID,
-		Image:          q.Book.Image,
+		ID:             bk.ID,
+		Title:          parseStringPtr(bk.Title),
+		Subtitle:       bk.Subtitle,
+		Description:    bk.Description,
+		Pages:          bk.Pages,
+		Rating:         parseRawFloat(&bk.Rating),
+		RatingsCount:   bk.RatingsCount,
+		ReviewsCount:   bk.ReviewsCount,
+		UsersCount:     bk.UsersCount,
+		ReleaseYear:    bk.ReleaseYear,
+		Slug:           bk.Slug,
+		AudioSeconds:   bk.AudioSeconds,
+		LiteraryTypeID: bk.LiteraryTypeID,
 	}
-	for _, ct := range q.Book.Contributions {
-		b.Contributions = append(b.Contributions, api.Contribution{
-			Author: api.Author{
-				ID:   ct.Author.ID,
-				Name: ct.Author.Name,
-				Slug: ct.Author.Slug,
-			},
-		})
+	if bk.Image != nil && bk.Image.URL != nil {
+		b.Image = &api.Image{URL: *bk.Image.URL}
+	}
+	for _, ct := range bk.Contributions {
+		if ct.Author != nil {
+			b.Contributions = append(b.Contributions, api.Contribution{
+				Author: api.Author{
+					ID:   ct.Author.ID,
+					Name: ct.Author.Name,
+					Slug: parseStringPtr(ct.Author.Slug),
+				},
+			})
+		}
 	}
 	return b, nil
 }
 
-// GetBookTags fetches genres, moods, and content warnings for a book.
+// GetBookTags fetches genres, moods, and content warnings for a book using gen.Client.
 func GetBookTags(ctx context.Context, c *api.Client, bookID int) (genres, moods, contentWarnings []api.TagItem, err error) {
-	const gqlQuery = `query ($bookId: Int!) {
-		books_by_pk(id: $bookId) {
-			taggings {
-				tag {
-					tag
-					tag_category_id
-				}
-			}
-		}
-	}`
-
-	vars := map[string]any{
-		"bookId": bookID,
+	res, err := c.Gen.GetBookTags(ctx, bookID)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("get book tags: %w", err)
 	}
 
-	raw, e := c.ExecRaw(ctx, gqlQuery, vars)
-	if e != nil {
-		return nil, nil, nil, fmt.Errorf("get book tags: %w", e)
-	}
-
-	var resp struct {
-		BooksByPK *struct {
-			Taggings []struct {
-				Tag struct {
-					Tag           string `json:"tag"`
-					TagCategoryID int    `json:"tag_category_id"`
-				} `json:"tag"`
-			} `json:"taggings"`
-		} `json:"books_by_pk"`
-	}
-	if e := json.Unmarshal(raw, &resp); e != nil {
-		return nil, nil, nil, fmt.Errorf("parse book tags: %w", e)
-	}
-
-	if resp.BooksByPK == nil {
+	if res.BooksByPk == nil {
 		return nil, nil, nil, nil
 	}
 
-	for _, t := range resp.BooksByPK.Taggings {
+	for _, t := range res.BooksByPk.Taggings {
 		item := api.TagItem{Name: t.Tag.Tag}
 		switch t.Tag.TagCategoryID {
 		case api.TagCategoryGenre:
@@ -279,72 +221,30 @@ func GetBookTags(ctx context.Context, c *api.Client, bookID int) (genres, moods,
 	return genres, moods, contentWarnings, nil
 }
 
-// GetBookReviews fetches popular community reviews for a book.
+// GetBookReviews fetches popular community reviews for a book using gen.Client.
 func GetBookReviews(ctx context.Context, c *api.Client, bookID, limit int) ([]api.BookReview, error) {
-	const gqlQuery = `query ($bookId: Int!, $limit: Int!) {
-		user_books(
-			where: {book_id: {_eq: $bookId}, has_review: {_eq: true}}
-			order_by: {likes_count: desc}
-			limit: $limit
-		) {
-			id
-			rating
-			review
-			review_has_spoilers
-			likes_count
-			created_at
-			user {
-				id
-				username
-				name
-			}
-		}
-	}`
-
-	vars := map[string]any{
-		"bookId": bookID,
-		"limit":  limit,
-	}
-
-	raw, err := c.ExecRaw(ctx, gqlQuery, vars)
+	res, err := c.Gen.GetBookReviews(ctx, bookID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("get book reviews: %w", err)
 	}
 
-	var resp struct {
-		UserBooks []struct {
-			ID                int      `json:"id"`
-			Rating            *float64 `json:"rating"`
-			Review            *string  `json:"review"`
-			ReviewHasSpoilers bool     `json:"review_has_spoilers"`
-			LikesCount        int      `json:"likes_count"`
-			CreatedAt         string   `json:"created_at"`
-			User              struct {
-				ID       int     `json:"id"`
-				Username string  `json:"username"`
-				Name     *string `json:"name"`
-			} `json:"user"`
-		} `json:"user_books"`
-	}
-	if err := json.Unmarshal(raw, &resp); err != nil {
-		return nil, fmt.Errorf("parse book reviews: %w", err)
-	}
-
-	reviews := make([]api.BookReview, len(resp.UserBooks))
-	for i, ub := range resp.UserBooks {
+	reviews := make([]api.BookReview, len(res.UserBooks))
+	for i, ub := range res.UserBooks {
 		reviews[i] = api.BookReview{
 			ID:                ub.ID,
-			Rating:            ub.Rating,
+			Rating:            parseRawFloat(&ub.Rating),
 			Review:            ub.Review,
 			ReviewHasSpoilers: ub.ReviewHasSpoilers,
 			LikesCount:        ub.LikesCount,
-			CreatedAt:         ub.CreatedAt,
+			CreatedAt:         parseRawString(ub.CreatedAt),
 			User: api.ReviewUser{
 				ID:       ub.User.ID,
-				Username: ub.User.Username,
+				Username: parseRawString(ub.User.Username),
 				Name:     ub.User.Name,
 			},
 		}
 	}
 	return reviews, nil
 }
+
+

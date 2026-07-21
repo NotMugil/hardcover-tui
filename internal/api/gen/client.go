@@ -1858,6 +1858,314 @@ func (t *GetUserBookAggregate_UserBooksAggregate) GetAggregate() *GetUserBookAgg
 	return t.Aggregate
 }
 
+type GetUserBookByBookID_UserBooks_Book_Image struct {
+	URL *string "json:\"url,omitempty\" graphql:\"url\""
+}
+
+func (t *GetUserBookByBookID_UserBooks_Book_Image) GetURL() *string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book_Image{}
+	}
+	return t.URL
+}
+
+type GetUserBookByBookID_UserBooks_Book_Contributions_Author struct {
+	ID   int     "json:\"id\" graphql:\"id\""
+	Name string  "json:\"name\" graphql:\"name\""
+	Slug *string "json:\"slug,omitempty\" graphql:\"slug\""
+}
+
+func (t *GetUserBookByBookID_UserBooks_Book_Contributions_Author) GetID() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book_Contributions_Author{}
+	}
+	return t.ID
+}
+func (t *GetUserBookByBookID_UserBooks_Book_Contributions_Author) GetName() string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book_Contributions_Author{}
+	}
+	return t.Name
+}
+func (t *GetUserBookByBookID_UserBooks_Book_Contributions_Author) GetSlug() *string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book_Contributions_Author{}
+	}
+	return t.Slug
+}
+
+type GetUserBookByBookID_UserBooks_Book_Contributions struct {
+	Author *GetUserBookByBookID_UserBooks_Book_Contributions_Author "json:\"author,omitempty\" graphql:\"author\""
+}
+
+func (t *GetUserBookByBookID_UserBooks_Book_Contributions) GetAuthor() *GetUserBookByBookID_UserBooks_Book_Contributions_Author {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book_Contributions{}
+	}
+	return t.Author
+}
+
+type GetUserBookByBookID_UserBooks_Book struct {
+	AudioSeconds  *int                                                "json:\"audio_seconds,omitempty\" graphql:\"audio_seconds\""
+	Contributions []*GetUserBookByBookID_UserBooks_Book_Contributions "json:\"contributions\" graphql:\"contributions\""
+	Description   *string                                             "json:\"description,omitempty\" graphql:\"description\""
+	ID            int                                                 "json:\"id\" graphql:\"id\""
+	Image         *GetUserBookByBookID_UserBooks_Book_Image           "json:\"image,omitempty\" graphql:\"image\""
+	Pages         *int                                                "json:\"pages,omitempty\" graphql:\"pages\""
+	Rating        json.RawMessage                                     "json:\"rating,omitempty\" graphql:\"rating\""
+	RatingsCount  int                                                 "json:\"ratings_count\" graphql:\"ratings_count\""
+	ReleaseYear   *int                                                "json:\"release_year,omitempty\" graphql:\"release_year\""
+	ReviewsCount  int                                                 "json:\"reviews_count\" graphql:\"reviews_count\""
+	Slug          *string                                             "json:\"slug,omitempty\" graphql:\"slug\""
+	Subtitle      *string                                             "json:\"subtitle,omitempty\" graphql:\"subtitle\""
+	Title         *string                                             "json:\"title,omitempty\" graphql:\"title\""
+	UsersCount    int                                                 "json:\"users_count\" graphql:\"users_count\""
+}
+
+func (t *GetUserBookByBookID_UserBooks_Book) GetAudioSeconds() *int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.AudioSeconds
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetContributions() []*GetUserBookByBookID_UserBooks_Book_Contributions {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.Contributions
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetDescription() *string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.Description
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetID() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.ID
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetImage() *GetUserBookByBookID_UserBooks_Book_Image {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.Image
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetPages() *int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.Pages
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetRating() *json.RawMessage {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return &t.Rating
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetRatingsCount() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.RatingsCount
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetReleaseYear() *int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.ReleaseYear
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetReviewsCount() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.ReviewsCount
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetSlug() *string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.Slug
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetSubtitle() *string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.Subtitle
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetTitle() *string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.Title
+}
+func (t *GetUserBookByBookID_UserBooks_Book) GetUsersCount() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_Book{}
+	}
+	return t.UsersCount
+}
+
+type GetUserBookByBookID_UserBooks_UserBookReads struct {
+	EditionID       *int            "json:\"edition_id,omitempty\" graphql:\"edition_id\""
+	FinishedAt      json.RawMessage "json:\"finished_at,omitempty\" graphql:\"finished_at\""
+	ID              int             "json:\"id\" graphql:\"id\""
+	ProgressPages   *int            "json:\"progress_pages,omitempty\" graphql:\"progress_pages\""
+	ProgressSeconds *int            "json:\"progress_seconds,omitempty\" graphql:\"progress_seconds\""
+	StartedAt       json.RawMessage "json:\"started_at,omitempty\" graphql:\"started_at\""
+}
+
+func (t *GetUserBookByBookID_UserBooks_UserBookReads) GetEditionID() *int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_UserBookReads{}
+	}
+	return t.EditionID
+}
+func (t *GetUserBookByBookID_UserBooks_UserBookReads) GetFinishedAt() *json.RawMessage {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_UserBookReads{}
+	}
+	return &t.FinishedAt
+}
+func (t *GetUserBookByBookID_UserBooks_UserBookReads) GetID() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_UserBookReads{}
+	}
+	return t.ID
+}
+func (t *GetUserBookByBookID_UserBooks_UserBookReads) GetProgressPages() *int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_UserBookReads{}
+	}
+	return t.ProgressPages
+}
+func (t *GetUserBookByBookID_UserBooks_UserBookReads) GetProgressSeconds() *int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_UserBookReads{}
+	}
+	return t.ProgressSeconds
+}
+func (t *GetUserBookByBookID_UserBooks_UserBookReads) GetStartedAt() *json.RawMessage {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks_UserBookReads{}
+	}
+	return &t.StartedAt
+}
+
+type GetUserBookByBookID_UserBooks struct {
+	Book          GetUserBookByBookID_UserBooks_Book             "json:\"book\" graphql:\"book\""
+	BookID        int                                            "json:\"book_id\" graphql:\"book_id\""
+	CreatedAt     json.RawMessage                                "json:\"created_at\" graphql:\"created_at\""
+	DateAdded     json.RawMessage                                "json:\"date_added\" graphql:\"date_added\""
+	HasReview     bool                                           "json:\"has_review\" graphql:\"has_review\""
+	ID            int                                            "json:\"id\" graphql:\"id\""
+	LikesCount    int                                            "json:\"likes_count\" graphql:\"likes_count\""
+	Owned         bool                                           "json:\"owned\" graphql:\"owned\""
+	Rating        json.RawMessage                                "json:\"rating,omitempty\" graphql:\"rating\""
+	ReadCount     int                                            "json:\"read_count\" graphql:\"read_count\""
+	Review        *string                                        "json:\"review,omitempty\" graphql:\"review\""
+	Starred       bool                                           "json:\"starred\" graphql:\"starred\""
+	StatusID      int                                            "json:\"status_id\" graphql:\"status_id\""
+	UserBookReads []*GetUserBookByBookID_UserBooks_UserBookReads "json:\"user_book_reads\" graphql:\"user_book_reads\""
+}
+
+func (t *GetUserBookByBookID_UserBooks) GetBook() *GetUserBookByBookID_UserBooks_Book {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return &t.Book
+}
+func (t *GetUserBookByBookID_UserBooks) GetBookID() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.BookID
+}
+func (t *GetUserBookByBookID_UserBooks) GetCreatedAt() *json.RawMessage {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return &t.CreatedAt
+}
+func (t *GetUserBookByBookID_UserBooks) GetDateAdded() *json.RawMessage {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return &t.DateAdded
+}
+func (t *GetUserBookByBookID_UserBooks) GetHasReview() bool {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.HasReview
+}
+func (t *GetUserBookByBookID_UserBooks) GetID() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.ID
+}
+func (t *GetUserBookByBookID_UserBooks) GetLikesCount() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.LikesCount
+}
+func (t *GetUserBookByBookID_UserBooks) GetOwned() bool {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.Owned
+}
+func (t *GetUserBookByBookID_UserBooks) GetRating() *json.RawMessage {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return &t.Rating
+}
+func (t *GetUserBookByBookID_UserBooks) GetReadCount() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.ReadCount
+}
+func (t *GetUserBookByBookID_UserBooks) GetReview() *string {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.Review
+}
+func (t *GetUserBookByBookID_UserBooks) GetStarred() bool {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.Starred
+}
+func (t *GetUserBookByBookID_UserBooks) GetStatusID() int {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.StatusID
+}
+func (t *GetUserBookByBookID_UserBooks) GetUserBookReads() []*GetUserBookByBookID_UserBooks_UserBookReads {
+	if t == nil {
+		t = &GetUserBookByBookID_UserBooks{}
+	}
+	return t.UserBookReads
+}
+
+type GetUserBookStatusIDs_UserBooks struct {
+	StatusID int "json:\"status_id\" graphql:\"status_id\""
+}
+
+func (t *GetUserBookStatusIDs_UserBooks) GetStatusID() int {
+	if t == nil {
+		t = &GetUserBookStatusIDs_UserBooks{}
+	}
+	return t.StatusID
+}
+
 type InsertUserBook_InsertUserBook struct {
 	Error *string "json:\"error,omitempty\" graphql:\"error\""
 	ID    *int    "json:\"id,omitempty\" graphql:\"id\""
@@ -2042,6 +2350,93 @@ func (t *DeleteReadingJournal_DeleteReadingJournal) GetID() int {
 	return t.ID
 }
 
+type InsertList_InsertList struct {
+	Errors []*string "json:\"errors,omitempty\" graphql:\"errors\""
+	ID     *int      "json:\"id,omitempty\" graphql:\"id\""
+}
+
+func (t *InsertList_InsertList) GetErrors() []*string {
+	if t == nil {
+		t = &InsertList_InsertList{}
+	}
+	return t.Errors
+}
+func (t *InsertList_InsertList) GetID() *int {
+	if t == nil {
+		t = &InsertList_InsertList{}
+	}
+	return t.ID
+}
+
+type UpdateList_UpdateList struct {
+	Errors []*string "json:\"errors,omitempty\" graphql:\"errors\""
+	ID     *int      "json:\"id,omitempty\" graphql:\"id\""
+}
+
+func (t *UpdateList_UpdateList) GetErrors() []*string {
+	if t == nil {
+		t = &UpdateList_UpdateList{}
+	}
+	return t.Errors
+}
+func (t *UpdateList_UpdateList) GetID() *int {
+	if t == nil {
+		t = &UpdateList_UpdateList{}
+	}
+	return t.ID
+}
+
+type DeleteList_DeleteList struct {
+	Success bool "json:\"success\" graphql:\"success\""
+}
+
+func (t *DeleteList_DeleteList) GetSuccess() bool {
+	if t == nil {
+		t = &DeleteList_DeleteList{}
+	}
+	return t.Success
+}
+
+type InsertListBook_InsertListBook struct {
+	ID *int "json:\"id,omitempty\" graphql:\"id\""
+}
+
+func (t *InsertListBook_InsertListBook) GetID() *int {
+	if t == nil {
+		t = &InsertListBook_InsertListBook{}
+	}
+	return t.ID
+}
+
+type DeleteListBook_DeleteListBook struct {
+	ID *int "json:\"id,omitempty\" graphql:\"id\""
+}
+
+func (t *DeleteListBook_DeleteListBook) GetID() *int {
+	if t == nil {
+		t = &DeleteListBook_DeleteListBook{}
+	}
+	return t.ID
+}
+
+type UpdateUserProfile_UpdateUser struct {
+	Errors []*string "json:\"errors,omitempty\" graphql:\"errors\""
+	ID     *int      "json:\"id,omitempty\" graphql:\"id\""
+}
+
+func (t *UpdateUserProfile_UpdateUser) GetErrors() []*string {
+	if t == nil {
+		t = &UpdateUserProfile_UpdateUser{}
+	}
+	return t.Errors
+}
+func (t *UpdateUserProfile_UpdateUser) GetID() *int {
+	if t == nil {
+		t = &UpdateUserProfile_UpdateUser{}
+	}
+	return t.ID
+}
+
 type SearchBooks struct {
 	Search *SearchBooks_Search "json:\"search,omitempty\" graphql:\"search\""
 }
@@ -2207,6 +2602,28 @@ func (t *GetUserBookAggregate) GetUserBooksAggregate() *GetUserBookAggregate_Use
 	return &t.UserBooksAggregate
 }
 
+type GetUserBookByBookID struct {
+	UserBooks []*GetUserBookByBookID_UserBooks "json:\"user_books\" graphql:\"user_books\""
+}
+
+func (t *GetUserBookByBookID) GetUserBooks() []*GetUserBookByBookID_UserBooks {
+	if t == nil {
+		t = &GetUserBookByBookID{}
+	}
+	return t.UserBooks
+}
+
+type GetUserBookStatusIDs struct {
+	UserBooks []*GetUserBookStatusIDs_UserBooks "json:\"user_books\" graphql:\"user_books\""
+}
+
+func (t *GetUserBookStatusIDs) GetUserBooks() []*GetUserBookStatusIDs_UserBooks {
+	if t == nil {
+		t = &GetUserBookStatusIDs{}
+	}
+	return t.UserBooks
+}
+
 type InsertUserBook struct {
 	InsertUserBook *InsertUserBook_InsertUserBook "json:\"insert_user_book,omitempty\" graphql:\"insert_user_book\""
 }
@@ -2326,6 +2743,72 @@ func (t *DeleteReadingJournal) GetDeleteReadingJournal() *DeleteReadingJournal_D
 		t = &DeleteReadingJournal{}
 	}
 	return t.DeleteReadingJournal
+}
+
+type InsertList struct {
+	InsertList *InsertList_InsertList "json:\"insert_list,omitempty\" graphql:\"insert_list\""
+}
+
+func (t *InsertList) GetInsertList() *InsertList_InsertList {
+	if t == nil {
+		t = &InsertList{}
+	}
+	return t.InsertList
+}
+
+type UpdateList struct {
+	UpdateList *UpdateList_UpdateList "json:\"update_list,omitempty\" graphql:\"update_list\""
+}
+
+func (t *UpdateList) GetUpdateList() *UpdateList_UpdateList {
+	if t == nil {
+		t = &UpdateList{}
+	}
+	return t.UpdateList
+}
+
+type DeleteList struct {
+	DeleteList *DeleteList_DeleteList "json:\"delete_list,omitempty\" graphql:\"delete_list\""
+}
+
+func (t *DeleteList) GetDeleteList() *DeleteList_DeleteList {
+	if t == nil {
+		t = &DeleteList{}
+	}
+	return t.DeleteList
+}
+
+type InsertListBook struct {
+	InsertListBook *InsertListBook_InsertListBook "json:\"insert_list_book,omitempty\" graphql:\"insert_list_book\""
+}
+
+func (t *InsertListBook) GetInsertListBook() *InsertListBook_InsertListBook {
+	if t == nil {
+		t = &InsertListBook{}
+	}
+	return t.InsertListBook
+}
+
+type DeleteListBook struct {
+	DeleteListBook *DeleteListBook_DeleteListBook "json:\"delete_list_book,omitempty\" graphql:\"delete_list_book\""
+}
+
+func (t *DeleteListBook) GetDeleteListBook() *DeleteListBook_DeleteListBook {
+	if t == nil {
+		t = &DeleteListBook{}
+	}
+	return t.DeleteListBook
+}
+
+type UpdateUserProfile struct {
+	UpdateUser *UpdateUserProfile_UpdateUser "json:\"update_user,omitempty\" graphql:\"update_user\""
+}
+
+func (t *UpdateUserProfile) GetUpdateUser() *UpdateUserProfile_UpdateUser {
+	if t == nil {
+		t = &UpdateUserProfile{}
+	}
+	return t.UpdateUser
 }
 
 const SearchBooksDocument = `query SearchBooks ($query: String!, $perPage: Int!) {
@@ -2946,6 +3429,98 @@ func (c *Client) GetUserBookAggregate(ctx context.Context, userID int, intercept
 	return &res, nil
 }
 
+const GetUserBookByBookIDDocument = `query GetUserBookByBookID ($userID: Int!, $bookID: Int!) {
+	user_books(where: {user_id:{_eq:$userID},book_id:{_eq:$bookID}}, limit: 1) {
+		id
+		book_id
+		status_id
+		rating
+		review
+		has_review
+		date_added
+		read_count
+		owned
+		starred
+		likes_count
+		created_at
+		book {
+			id
+			title
+			subtitle
+			description
+			pages
+			rating
+			ratings_count
+			reviews_count
+			users_count
+			release_year
+			slug
+			audio_seconds
+			image {
+				url
+			}
+			contributions {
+				author {
+					id
+					name
+					slug
+				}
+			}
+		}
+		user_book_reads {
+			id
+			started_at
+			finished_at
+			progress_pages
+			progress_seconds
+			edition_id
+		}
+	}
+}
+`
+
+func (c *Client) GetUserBookByBookID(ctx context.Context, userID int, bookID int, interceptors ...clientv2.RequestInterceptor) (*GetUserBookByBookID, error) {
+	vars := map[string]any{
+		"userID": userID,
+		"bookID": bookID,
+	}
+
+	var res GetUserBookByBookID
+	if err := c.Client.Post(ctx, "GetUserBookByBookID", GetUserBookByBookIDDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const GetUserBookStatusIDsDocument = `query GetUserBookStatusIDs ($userID: Int!) {
+	user_books(where: {user_id:{_eq:$userID}}) {
+		status_id
+	}
+}
+`
+
+func (c *Client) GetUserBookStatusIDs(ctx context.Context, userID int, interceptors ...clientv2.RequestInterceptor) (*GetUserBookStatusIDs, error) {
+	vars := map[string]any{
+		"userID": userID,
+	}
+
+	var res GetUserBookStatusIDs
+	if err := c.Client.Post(ctx, "GetUserBookStatusIDs", GetUserBookStatusIDsDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 const InsertUserBookDocument = `mutation InsertUserBook ($bookId: Int!, $statusId: Int!) {
 	insert_user_book(object: {book_id:$bookId,status_id:$statusId}) {
 		id
@@ -3235,6 +3810,162 @@ func (c *Client) DeleteReadingJournal(ctx context.Context, id int, interceptors 
 	return &res, nil
 }
 
+const InsertListDocument = `mutation InsertList ($name: String!, $description: String, $privacySettingId: Int!) {
+	insert_list(object: {name:$name,description:$description,privacy_setting_id:$privacySettingId}) {
+		id
+		errors
+	}
+}
+`
+
+func (c *Client) InsertList(ctx context.Context, name string, description *string, privacySettingID int, interceptors ...clientv2.RequestInterceptor) (*InsertList, error) {
+	vars := map[string]any{
+		"name":             name,
+		"description":      description,
+		"privacySettingId": privacySettingID,
+	}
+
+	var res InsertList
+	if err := c.Client.Post(ctx, "InsertList", InsertListDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const UpdateListDocument = `mutation UpdateList ($id: Int!, $name: String!, $description: String, $privacySettingId: Int!) {
+	update_list(id: $id, object: {name:$name,description:$description,privacy_setting_id:$privacySettingId}) {
+		id
+		errors
+	}
+}
+`
+
+func (c *Client) UpdateList(ctx context.Context, id int, name string, description *string, privacySettingID int, interceptors ...clientv2.RequestInterceptor) (*UpdateList, error) {
+	vars := map[string]any{
+		"id":               id,
+		"name":             name,
+		"description":      description,
+		"privacySettingId": privacySettingID,
+	}
+
+	var res UpdateList
+	if err := c.Client.Post(ctx, "UpdateList", UpdateListDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const DeleteListDocument = `mutation DeleteList ($id: Int!) {
+	delete_list(id: $id) {
+		success
+	}
+}
+`
+
+func (c *Client) DeleteList(ctx context.Context, id int, interceptors ...clientv2.RequestInterceptor) (*DeleteList, error) {
+	vars := map[string]any{
+		"id": id,
+	}
+
+	var res DeleteList
+	if err := c.Client.Post(ctx, "DeleteList", DeleteListDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const InsertListBookDocument = `mutation InsertListBook ($listId: Int!, $bookId: Int!, $position: Int!) {
+	insert_list_book(object: {list_id:$listId,book_id:$bookId,position:$position}) {
+		id
+	}
+}
+`
+
+func (c *Client) InsertListBook(ctx context.Context, listID int, bookID int, position int, interceptors ...clientv2.RequestInterceptor) (*InsertListBook, error) {
+	vars := map[string]any{
+		"listId":   listID,
+		"bookId":   bookID,
+		"position": position,
+	}
+
+	var res InsertListBook
+	if err := c.Client.Post(ctx, "InsertListBook", InsertListBookDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const DeleteListBookDocument = `mutation DeleteListBook ($id: Int!) {
+	delete_list_book(id: $id) {
+		id
+	}
+}
+`
+
+func (c *Client) DeleteListBook(ctx context.Context, id int, interceptors ...clientv2.RequestInterceptor) (*DeleteListBook, error) {
+	vars := map[string]any{
+		"id": id,
+	}
+
+	var res DeleteListBook
+	if err := c.Client.Post(ctx, "DeleteListBook", DeleteListBookDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const UpdateUserProfileDocument = `mutation UpdateUserProfile ($name: String, $bio: String, $location: String) {
+	update_user(user: {name:$name,bio:$bio,location:$location}) {
+		id
+		errors
+	}
+}
+`
+
+func (c *Client) UpdateUserProfile(ctx context.Context, name *string, bio *string, location *string, interceptors ...clientv2.RequestInterceptor) (*UpdateUserProfile, error) {
+	vars := map[string]any{
+		"name":     name,
+		"bio":      bio,
+		"location": location,
+	}
+
+	var res UpdateUserProfile
+	if err := c.Client.Post(ctx, "UpdateUserProfile", UpdateUserProfileDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 var DocumentOperationNames = map[string]string{
 	SearchBooksDocument:             "SearchBooks",
 	GetBookByIDDocument:             "GetBookByID",
@@ -3251,6 +3982,8 @@ var DocumentOperationNames = map[string]string{
 	GetUserBooksDocument:            "GetUserBooks",
 	GetUserBookByPkDocument:         "GetUserBookByPK",
 	GetUserBookAggregateDocument:    "GetUserBookAggregate",
+	GetUserBookByBookIDDocument:     "GetUserBookByBookID",
+	GetUserBookStatusIDsDocument:    "GetUserBookStatusIDs",
 	InsertUserBookDocument:          "InsertUserBook",
 	UpdateUserBookStatusDocument:    "UpdateUserBookStatus",
 	UpdateUserBookRatingDocument:    "UpdateUserBookRating",
@@ -3262,4 +3995,10 @@ var DocumentOperationNames = map[string]string{
 	InsertReadingJournalDocument:    "InsertReadingJournal",
 	UpdateReadingJournalDocument:    "UpdateReadingJournal",
 	DeleteReadingJournalDocument:    "DeleteReadingJournal",
+	InsertListDocument:              "InsertList",
+	UpdateListDocument:              "UpdateList",
+	DeleteListDocument:              "DeleteList",
+	InsertListBookDocument:          "InsertListBook",
+	DeleteListBookDocument:          "DeleteListBook",
+	UpdateUserProfileDocument:       "UpdateUserProfile",
 }
