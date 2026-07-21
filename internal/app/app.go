@@ -320,7 +320,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.err = msg.err
 			m.setupMode = true
-			s := setup.New()
+			s := setup.NewWithError(msg.err)
 			m.setupScr = s
 			return m, batchCmds(alertCmd, s.Init())
 		}

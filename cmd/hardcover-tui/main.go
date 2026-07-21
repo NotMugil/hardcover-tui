@@ -48,12 +48,14 @@ func handleAuthCommand(args []string) bool {
 	switch sub {
 	case "login":
 		if len(args) < 3 {
-			fmt.Println("Usage: hardcover-tui auth login <Bearer TOKEN>")
+			fmt.Println("Usage: hardcover-tui auth login <TOKEN>")
 			os.Exit(1)
 		}
-		token := strings.TrimSpace(args[2])
-		if !strings.HasPrefix(token, "Bearer ") {
-			token = "Bearer " + token
+		rawToken := strings.TrimSpace(strings.Join(args[2:], " "))
+		token := keystore.FormatToken(rawToken)
+		if token == "" {
+			fmt.Println("Error: Invalid API token provided.")
+			os.Exit(1)
 		}
 		if err := keystore.Save(token); err != nil {
 			fmt.Printf("Error saving API token: %v\n", err)

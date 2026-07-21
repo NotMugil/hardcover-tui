@@ -2,7 +2,6 @@ package setup
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -69,6 +68,16 @@ func New() *Model {
 	}
 }
 
+// NewWithError creates a new setup screen initialized in an error state.
+func NewWithError(err error) *Model {
+	m := New()
+	if err != nil {
+		m.state = stateError
+		m.err = err
+	}
+	return m
+}
+
 func (m *Model) Init() tea.Cmd {
 	return textinput.Blink
 }
@@ -92,7 +101,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			if m.state == stateInput {
-				token := strings.TrimSpace(m.textInput.Value())
+				token := keystore.FormatToken(m.textInput.Value())
 				if token == "" {
 					return m, nil
 				}

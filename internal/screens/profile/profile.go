@@ -287,8 +287,8 @@ func (m *Model) View() string {
 		b.WriteString(common.PanelStyle.Render(header.String()))
 		b.WriteString("\n")
 
-		showAvatar := m.width >= 106 && m.height >= 24
-		if m.avatarArt != "" && showAvatar {
+		showAvatar := m.avatarArt != "" && m.width >= 40 && m.height >= 16
+		if showAvatar {
 			b.WriteString(common.PanelStyle.Render(m.avatarArt))
 			b.WriteString("\n")
 		}

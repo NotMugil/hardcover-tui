@@ -175,10 +175,10 @@ func (m *Model) View() string {
 	))
 
 	var userPanelContent string
-	showAvatar := m.width >= 106 && m.height >= 24
-	if m.avatarArt != "" && showAvatar {
-		innerW := panelInnerW(leftW)
-		avatarW := lipgloss.Width(m.avatarArt)
+	innerW := panelInnerW(leftW)
+	avatarW := lipgloss.Width(m.avatarArt)
+	showAvatar := m.avatarArt != "" && innerW >= avatarW && m.height >= 16
+	if showAvatar {
 		statsW := lipgloss.Width(statsContent.String())
 		if avatarW+1+statsW <= innerW {
 			userPanelContent = lipgloss.JoinHorizontal(lipgloss.Top, m.avatarArt, " ", statsContent.String())
