@@ -142,6 +142,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case commands.BookAddedMsg:
 		m.loading = false
+		m.mode = modeDetail
 		if msg.Err != nil {
 			m.err = msg.Err
 			return m, components.NotifyCmd(components.NotifyError, msg.Err.Error())

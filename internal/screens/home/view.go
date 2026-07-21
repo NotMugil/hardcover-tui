@@ -124,12 +124,12 @@ func (m *Model) View() string {
 	}
 
 	fbW := m.width - 2
-	if fbW < 40 {
-		fbW = 80
+	if fbW < 10 {
+		fbW = 10
 	}
 	fbH := m.height
-	if fbH < 10 {
-		fbH = 30
+	if fbH < 5 {
+		fbH = 5
 	}
 	m.flexBox.SetWidth(fbW)
 	m.flexBox.SetHeight(fbH)
@@ -175,9 +175,16 @@ func (m *Model) View() string {
 	))
 
 	var userPanelContent string
-	if m.avatarArt != "" {
-		userPanelContent = lipgloss.JoinHorizontal(lipgloss.Top,
-			m.avatarArt, " ", statsContent.String())
+	showAvatar := m.width >= 106 && m.height >= 24
+	if m.avatarArt != "" && showAvatar {
+		innerW := panelInnerW(leftW)
+		avatarW := lipgloss.Width(m.avatarArt)
+		statsW := lipgloss.Width(statsContent.String())
+		if avatarW+1+statsW <= innerW {
+			userPanelContent = lipgloss.JoinHorizontal(lipgloss.Top, m.avatarArt, " ", statsContent.String())
+		} else {
+			userPanelContent = lipgloss.JoinVertical(lipgloss.Left, m.avatarArt, statsContent.String())
+		}
 	} else {
 		userPanelContent = statsContent.String()
 	}
@@ -307,19 +314,19 @@ func (m *Model) renderActivityPanel(width, height int) string {
 	innerW := width - 4
 
 	var filterBar strings.Builder
-	meLabel := "Mine"
-	forYouLabel := "For You"
+	meLabel := "Me"
+	followingLabel := "Following"
 	if m.activityFilter == activityFilterMe {
 		meLabel = lipgloss.NewStyle().Bold(true).Foreground(common.ColorPrimary).
 			Background(common.ColorHighlight).Padding(0, 1).Render(meLabel)
-		forYouLabel = lipgloss.NewStyle().Foreground(common.ColorMuted).Padding(0, 1).Render(forYouLabel)
+		followingLabel = lipgloss.NewStyle().Foreground(common.ColorMuted).Padding(0, 1).Render(followingLabel)
 	} else {
 		meLabel = lipgloss.NewStyle().Foreground(common.ColorMuted).Padding(0, 1).Render(meLabel)
-		forYouLabel = lipgloss.NewStyle().Bold(true).Foreground(common.ColorPrimary).
-			Background(common.ColorHighlight).Padding(0, 1).Render(forYouLabel)
+		followingLabel = lipgloss.NewStyle().Bold(true).Foreground(common.ColorPrimary).
+			Background(common.ColorHighlight).Padding(0, 1).Render(followingLabel)
 	}
 	filterBar.WriteString(meLabel)
-	filterBar.WriteString(forYouLabel)
+	filterBar.WriteString(followingLabel)
 
 	var content strings.Builder
 	content.WriteString(filterBar.String())
@@ -367,7 +374,7 @@ func (m *Model) renderActivityPanel(width, height int) string {
 			if m.activityFocused && i == m.activityCursor {
 				cursor = "> "
 			}
-			line := renderActivityItem(act, innerW-2, m.activityFilter == activityFilterForYou)
+			line := renderActivityItem(act, innerW-2, m.activityFilter == activityFilterFollowing)
 			lines := strings.Split(line, "\n")
 			for j, l := range lines {
 				if j == 0 {

@@ -46,9 +46,42 @@ func GetActivities(ctx context.Context, c *api.Client, userID int, limit int) ([
 	return out, nil
 }
 
-// GetForYouActivities fetches the "for you" activity feed.
-func GetForYouActivities(ctx context.Context, c *api.Client, userID int, limit int) ([]api.Activity, error) {
-	return GetActivities(ctx, c, userID, limit)
+// GetFollowingActivities fetches the activity feed of users followed by the given user.
+func GetFollowingActivities(ctx context.Context, c *api.Client, userID int, limit int) ([]api.Activity, error) {
+	res, err := c.Gen.GetFollowingActivities(ctx, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("query following activities: %w", err)
+	}
+
+	out := make([]api.Activity, len(res.Activities))
+	for i, a := range res.Activities {
+		act := api.Activity{
+			ID:               a.ID,
+			Event:            a.Event,
+			Data:             a.Data,
+			BookID:           a.BookID,
+			LikesCount:       a.LikesCount,
+			PrivacySettingID: a.PrivacySettingID,
+			CreatedAt:        parseRawString(a.CreatedAt),
+			User: &api.ActivityUser{
+				ID:       a.User.ID,
+				Username: parseRawString(a.User.Username),
+				Name:     a.User.Name,
+			},
+		}
+		if a.Book != nil {
+			b := &api.Book{
+				ID:    a.Book.ID,
+				Title: parseStringPtr(a.Book.Title),
+			}
+			if a.Book.Image != nil && a.Book.Image.URL != nil {
+				b.Image = &api.Image{URL: *a.Book.Image.URL}
+			}
+			act.Book = b
+		}
+		out[i] = act
+	}
+	return out, nil
 }
 
 // GetLists fetches the user's lists using gen.Client.

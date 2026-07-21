@@ -25,11 +25,17 @@ func (m *Model) loadInitial() tea.Cmd {
 	page := m.page
 	pageSize := m.pageSize
 	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		u, uErr := queries.GetMe(ctx, client)
+		if uErr == nil && u != nil {
+			user = u
+		}
+
 		if user == nil || user.ID <= 0 {
 			return booksLoadedMsg{err: fmt.Errorf("user profile not loaded")}
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
 
 		var statusID *int
 		if filter > 0 {
@@ -45,13 +51,13 @@ func (m *Model) loadInitial() tea.Cmd {
 
 		var avatarArt string
 		if user.ImageURL() != "" {
-			art, artErr := common.RenderImage(user.ImageURL(), 28, 14)
+			art, artErr := common.RenderImage(user.ImageURL(), 12, 6)
 			if artErr == nil {
 				avatarArt = art
 			}
 		}
 
-		return booksLoadedMsg{books: books, reading: reading, avatarArt: avatarArt}
+		return booksLoadedMsg{user: user, books: books, reading: reading, avatarArt: avatarArt}
 	}
 }
 
@@ -90,8 +96,8 @@ func (m *Model) loadActivities() tea.Cmd {
 		defer cancel()
 		var activities []api.Activity
 		var err error
-		if af == activityFilterForYou {
-			activities, err = queries.GetForYouActivities(ctx, client, user.ID, 30)
+		if af == activityFilterFollowing {
+			activities, err = queries.GetFollowingActivities(ctx, client, user.ID, 30)
 		} else {
 			activities, err = queries.GetActivities(ctx, client, user.ID, 30)
 		}

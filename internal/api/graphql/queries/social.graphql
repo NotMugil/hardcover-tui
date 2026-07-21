@@ -26,6 +26,34 @@ query GetActivities($userID: Int!, $limit: Int!) {
   }
 }
 
+query GetFollowingActivities($userID: Int!, $limit: Int!) {
+  activities(
+    where: {followers: {user_id: {_eq: $userID}}}
+    order_by: {created_at: desc}
+    limit: $limit
+  ) {
+    id
+    event
+    data
+    book_id
+    likes_count
+    privacy_setting_id
+    created_at
+    book {
+      id
+      title
+      image {
+        url
+      }
+    }
+    user {
+      id
+      username
+      name
+    }
+  }
+}
+
 query GetLists($userID: Int!) {
   lists(where: {user_id: {_eq: $userID}}, order_by: {updated_at: desc}) {
     id

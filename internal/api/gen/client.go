@@ -444,6 +444,134 @@ func (t *GetActivities_Activities) GetUser() *GetActivities_Activities_User {
 	return &t.User
 }
 
+type GetFollowingActivities_Activities_Book_Image struct {
+	URL *string "json:\"url,omitempty\" graphql:\"url\""
+}
+
+func (t *GetFollowingActivities_Activities_Book_Image) GetURL() *string {
+	if t == nil {
+		t = &GetFollowingActivities_Activities_Book_Image{}
+	}
+	return t.URL
+}
+
+type GetFollowingActivities_Activities_Book struct {
+	ID    int                                           "json:\"id\" graphql:\"id\""
+	Image *GetFollowingActivities_Activities_Book_Image "json:\"image,omitempty\" graphql:\"image\""
+	Title *string                                       "json:\"title,omitempty\" graphql:\"title\""
+}
+
+func (t *GetFollowingActivities_Activities_Book) GetID() int {
+	if t == nil {
+		t = &GetFollowingActivities_Activities_Book{}
+	}
+	return t.ID
+}
+func (t *GetFollowingActivities_Activities_Book) GetImage() *GetFollowingActivities_Activities_Book_Image {
+	if t == nil {
+		t = &GetFollowingActivities_Activities_Book{}
+	}
+	return t.Image
+}
+func (t *GetFollowingActivities_Activities_Book) GetTitle() *string {
+	if t == nil {
+		t = &GetFollowingActivities_Activities_Book{}
+	}
+	return t.Title
+}
+
+type GetFollowingActivities_Activities_User struct {
+	ID       int             "json:\"id\" graphql:\"id\""
+	Name     *string         "json:\"name,omitempty\" graphql:\"name\""
+	Username json.RawMessage "json:\"username,omitempty\" graphql:\"username\""
+}
+
+func (t *GetFollowingActivities_Activities_User) GetID() int {
+	if t == nil {
+		t = &GetFollowingActivities_Activities_User{}
+	}
+	return t.ID
+}
+func (t *GetFollowingActivities_Activities_User) GetName() *string {
+	if t == nil {
+		t = &GetFollowingActivities_Activities_User{}
+	}
+	return t.Name
+}
+func (t *GetFollowingActivities_Activities_User) GetUsername() *json.RawMessage {
+	if t == nil {
+		t = &GetFollowingActivities_Activities_User{}
+	}
+	return &t.Username
+}
+
+type GetFollowingActivities_Activities struct {
+	Book             *GetFollowingActivities_Activities_Book "json:\"book,omitempty\" graphql:\"book\""
+	BookID           *int                                    "json:\"book_id,omitempty\" graphql:\"book_id\""
+	CreatedAt        json.RawMessage                         "json:\"created_at,omitempty\" graphql:\"created_at\""
+	Data             json.RawMessage                         "json:\"data\" graphql:\"data\""
+	Event            string                                  "json:\"event\" graphql:\"event\""
+	ID               int                                     "json:\"id\" graphql:\"id\""
+	LikesCount       int                                     "json:\"likes_count\" graphql:\"likes_count\""
+	PrivacySettingID int                                     "json:\"privacy_setting_id\" graphql:\"privacy_setting_id\""
+	User             GetFollowingActivities_Activities_User  "json:\"user\" graphql:\"user\""
+}
+
+func (t *GetFollowingActivities_Activities) GetBook() *GetFollowingActivities_Activities_Book {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return t.Book
+}
+func (t *GetFollowingActivities_Activities) GetBookID() *int {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return t.BookID
+}
+func (t *GetFollowingActivities_Activities) GetCreatedAt() *json.RawMessage {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return &t.CreatedAt
+}
+func (t *GetFollowingActivities_Activities) GetData() *json.RawMessage {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return &t.Data
+}
+func (t *GetFollowingActivities_Activities) GetEvent() string {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return t.Event
+}
+func (t *GetFollowingActivities_Activities) GetID() int {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return t.ID
+}
+func (t *GetFollowingActivities_Activities) GetLikesCount() int {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return t.LikesCount
+}
+func (t *GetFollowingActivities_Activities) GetPrivacySettingID() int {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return t.PrivacySettingID
+}
+func (t *GetFollowingActivities_Activities) GetUser() *GetFollowingActivities_Activities_User {
+	if t == nil {
+		t = &GetFollowingActivities_Activities{}
+	}
+	return &t.User
+}
+
 type GetLists_Lists struct {
 	BooksCount       int             "json:\"books_count\" graphql:\"books_count\""
 	CreatedAt        json.RawMessage "json:\"created_at,omitempty\" graphql:\"created_at\""
@@ -1097,6 +1225,7 @@ func (t *GetMe_Me_Image) GetWidth() *int {
 type GetMe_Me struct {
 	Bio                *string         "json:\"bio,omitempty\" graphql:\"bio\""
 	BooksCount         int             "json:\"books_count\" graphql:\"books_count\""
+	CachedImage        json.RawMessage "json:\"cached_image\" graphql:\"cached_image\""
 	CreatedAt          json.RawMessage "json:\"created_at\" graphql:\"created_at\""
 	Flair              *string         "json:\"flair,omitempty\" graphql:\"flair\""
 	FollowedUsersCount int             "json:\"followed_users_count\" graphql:\"followed_users_count\""
@@ -1123,6 +1252,12 @@ func (t *GetMe_Me) GetBooksCount() int {
 		t = &GetMe_Me{}
 	}
 	return t.BooksCount
+}
+func (t *GetMe_Me) GetCachedImage() *json.RawMessage {
+	if t == nil {
+		t = &GetMe_Me{}
+	}
+	return &t.CachedImage
 }
 func (t *GetMe_Me) GetCreatedAt() *json.RawMessage {
 	if t == nil {
@@ -2492,6 +2627,17 @@ func (t *GetActivities) GetActivities() []*GetActivities_Activities {
 	return t.Activities
 }
 
+type GetFollowingActivities struct {
+	Activities []*GetFollowingActivities_Activities "json:\"activities\" graphql:\"activities\""
+}
+
+func (t *GetFollowingActivities) GetActivities() []*GetFollowingActivities_Activities {
+	if t == nil {
+		t = &GetFollowingActivities{}
+	}
+	return t.Activities
+}
+
 type GetLists struct {
 	Lists []*GetLists_Lists "json:\"lists\" graphql:\"lists\""
 }
@@ -2991,6 +3137,49 @@ func (c *Client) GetActivities(ctx context.Context, userID int, limit int, inter
 	return &res, nil
 }
 
+const GetFollowingActivitiesDocument = `query GetFollowingActivities ($userID: Int!, $limit: Int!) {
+	activities(where: {followers:{user_id:{_eq:$userID}}}, order_by: {created_at:desc}, limit: $limit) {
+		id
+		event
+		data
+		book_id
+		likes_count
+		privacy_setting_id
+		created_at
+		book {
+			id
+			title
+			image {
+				url
+			}
+		}
+		user {
+			id
+			username
+			name
+		}
+	}
+}
+`
+
+func (c *Client) GetFollowingActivities(ctx context.Context, userID int, limit int, interceptors ...clientv2.RequestInterceptor) (*GetFollowingActivities, error) {
+	vars := map[string]any{
+		"userID": userID,
+		"limit":  limit,
+	}
+
+	var res GetFollowingActivities
+	if err := c.Client.Post(ctx, "GetFollowingActivities", GetFollowingActivitiesDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 const GetListsDocument = `query GetLists ($userID: Int!) {
 	lists(where: {user_id:{_eq:$userID}}, order_by: {updated_at:desc}) {
 		id
@@ -3241,6 +3430,7 @@ const GetMeDocument = `query GetMe {
 			width
 			height
 		}
+		cached_image
 		created_at
 	}
 }
@@ -3972,6 +4162,7 @@ var DocumentOperationNames = map[string]string{
 	GetBookTagsDocument:             "GetBookTags",
 	GetBookReviewsDocument:          "GetBookReviews",
 	GetActivitiesDocument:           "GetActivities",
+	GetFollowingActivitiesDocument:  "GetFollowingActivities",
 	GetListsDocument:                "GetLists",
 	GetListBooksDocument:            "GetListBooks",
 	GetGoalsDocument:                "GetGoals",

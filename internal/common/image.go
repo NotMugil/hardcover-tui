@@ -7,9 +7,11 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/blacktop/go-termimg"
+	_ "golang.org/x/image/webp"
 )
 
 // RenderImage fetches an image from a URL and returns a terminal-renderable string.
@@ -59,11 +61,11 @@ func RenderImage(url string, maxWidth, maxHeight int) (string, error) {
 	}
 
 	ti := termimg.New(img)
-	ti.Width(cellW).Height(cellH).Scale(termimg.ScaleFit).Protocol(termimg.Halfblocks)
+	ti.Width(cellW * 2).Height(cellH * 2).Scale(termimg.ScaleStretch).Protocol(termimg.Halfblocks)
 
 	rendered, err := ti.Render()
 	if err != nil {
 		return "", fmt.Errorf("render image: %w", err)
 	}
-	return rendered, nil
+	return strings.TrimRight(rendered, "\n"), nil
 }

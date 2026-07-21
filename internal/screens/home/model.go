@@ -22,6 +22,7 @@ type NavigateToBookMsg struct {
 }
 
 type booksLoadedMsg struct {
+	user      *api.User
 	books     []api.UserBook
 	reading   []api.UserBook
 	avatarArt string
@@ -45,7 +46,7 @@ type activityFilter int
 
 const (
 	activityFilterMe        activityFilter = iota // user's own activity
-	activityFilterForYou                          // "for you" activity feed
+	activityFilterFollowing                       // activity feed of followed users
 )
 
 // bookItem implements list.DefaultItem for the bubbles list.
@@ -146,9 +147,9 @@ func New(deps commands.Deps) *Model {
 
 	fb := flexbox.New(0, 0)
 	row := fb.NewRow().AddCells(
-		flexbox.NewCell(6, 1),
-		flexbox.NewCell(9, 1),
 		flexbox.NewCell(5, 1),
+		flexbox.NewCell(8, 1),
+		flexbox.NewCell(7, 1),
 	)
 	fb.AddRows([]*flexbox.Row{row})
 

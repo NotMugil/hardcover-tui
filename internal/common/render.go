@@ -107,7 +107,9 @@ func renderPanel(title, content string, width, height int, opts panelOpts) strin
 		return style.Render(wrapped)
 	}
 
-	titleStr := lipgloss.NewStyle().Bold(true).Foreground(opts.titleColor).Render(title)
+	titleMaxW := clampMin(width-6, 1)
+	truncatedTitle := Truncate(title, titleMaxW)
+	titleStr := lipgloss.NewStyle().Bold(true).Foreground(opts.titleColor).Render(truncatedTitle)
 	pad := clampMin(width-2-lipgloss.Width(titleStr)-4, 0)
 	top := bdr.Render(border.TopLeft+border.Top+border.Top+" ") +
 		titleStr +
@@ -116,7 +118,7 @@ func renderPanel(title, content string, width, height int, opts panelOpts) strin
 		bdr.Render(border.TopRight)
 
 	bottom := bdr.Render(border.BottomLeft) +
-		repeatStyled(border.Bottom, width-2, bdr) +
+		repeatStyled(border.Bottom, clampMin(width-2, 0), bdr) +
 		bdr.Render(border.BottomRight)
 
 	lines := strings.Split(wrapped, "\n")
@@ -143,7 +145,14 @@ func renderPanel(title, content string, width, height int, opts panelOpts) strin
 
 // Truncate and add ellipsis if string exceeds max width
 func Truncate(s string, maxWidth int) string {
+	if maxWidth <= 0 {
+		return ""
+	}
 	if maxWidth <= 3 {
+		runes := []rune(s)
+		if len(runes) > maxWidth {
+			return string(runes[:maxWidth])
+		}
 		return s
 	}
 	if lipgloss.Width(s) <= maxWidth {

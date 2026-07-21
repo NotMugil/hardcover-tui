@@ -37,8 +37,15 @@ func GetMe(ctx context.Context, c *api.Client) (*api.User, error) {
 		PronounPossessive:  me.PronounPossessive,
 		CreatedAt:          parseRawTime(me.CreatedAt),
 	}
-	if me.Image != nil && me.Image.URL != nil {
+	if me.Image != nil && me.Image.URL != nil && *me.Image.URL != "" {
 		u.Image = &api.Image{URL: *me.Image.URL}
+	} else if len(me.CachedImage) > 0 {
+		var ci struct {
+			URL string `json:"url"`
+		}
+		if err := json.Unmarshal(me.CachedImage, &ci); err == nil && ci.URL != "" {
+			u.Image = &api.Image{URL: ci.URL}
+		}
 	}
 	return u, nil
 }

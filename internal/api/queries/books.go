@@ -12,11 +12,9 @@ import (
 // Search performs a book search using the Hardcover search API with safe GraphQL variable binding
 // and resilient Typesense response unmarshaling via gen.Client.
 func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error) {
-	if strings.TrimSpace(query) == "" {
-		return nil, nil
-	}
+	cleanQuery := strings.TrimSpace(query)
 
-	res, err := c.Gen.SearchBooks(ctx, query, 20)
+	res, err := c.Gen.SearchBooks(ctx, cleanQuery, 20)
 	if err != nil {
 		return nil, fmt.Errorf("search API request failed: %w", err)
 	}

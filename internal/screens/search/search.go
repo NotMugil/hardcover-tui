@@ -30,6 +30,8 @@ type Model struct {
 	table        table.Model
 	spinner      spinner.Model
 	searching    bool
+	searched     bool
+	activeQuery  string
 	inputFocused bool
 	tableFocused bool
 	err          error
@@ -40,7 +42,7 @@ type Model struct {
 // New creates a new search screen.
 func New(deps commands.Deps) *Model {
 	ti := textinput.New()
-	ti.Placeholder = "Search books..."
+	ti.Placeholder = "Search books by title, author, or genre..."
 	ti.Width = 50
 	ti.Cursor.Style = common.CursorStyle
 
@@ -124,7 +126,8 @@ func (m *Model) SetSize(w, h int) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return nil
+	m.searching = true
+	return tea.Batch(m.spinner.Tick, commands.SearchBooks(m.deps, ""))
 }
 
 // Loaded returns true immediately — search loads on demand.
@@ -142,16 +145,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case commands.SearchResultsMsg:
 		m.searching = false
+		m.searched = true
 		if msg.Err != nil {
 			m.err = msg.Err
 			return m, nil
 		}
 		m.results = msg.Books
 		m.table.SetRows(booksToRows(m.results))
-		m.inputFocused = false
-		m.tableFocused = true
-		m.textInput.Blur()
-		m.table.Focus()
+		if len(m.results) > 0 {
+			m.inputFocused = false
+			m.tableFocused = true
+			m.textInput.Blur()
+			m.table.Focus()
+		}
 		return m, nil
 
 	case spinner.TickMsg:
@@ -166,12 +172,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "enter":
 				query := strings.TrimSpace(m.textInput.Value())
-				if query == "" {
-					return m, nil
-				}
+				m.activeQuery = query
 				m.searching = true
 				m.err = nil
 				return m, tea.Batch(m.spinner.Tick, commands.SearchBooks(m.deps, query))
+			case "ctrl+l":
+				m.textInput.SetValue("")
+				m.activeQuery = ""
+				m.searching = true
+				m.err = nil
+				return m, tea.Batch(m.spinner.Tick, commands.SearchBooks(m.deps, ""))
 			case "esc":
 				m.inputFocused = false
 				m.textInput.Blur()
@@ -203,6 +213,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.textInput.Focus()
 			m.table.Blur()
 			return m, textinput.Blink
+		case "ctrl+l":
+			m.textInput.SetValue("")
+			m.activeQuery = ""
+			m.searching = true
+			m.err = nil
+			return m, tea.Batch(m.spinner.Tick, commands.SearchBooks(m.deps, ""))
 		case "esc":
 			m.tableFocused = false
 			m.table.Blur()
@@ -248,8 +264,13 @@ func (m *Model) View() string {
 	}
 	b.WriteString("\n\n")
 
+	panelW := m.width - 2
+	if panelW < 10 {
+		panelW = 10
+	}
+
 	if m.searching {
-		b.WriteString(fmt.Sprintf("  %s Searching...\n", m.spinner.View()))
+		b.WriteString(common.RenderPanel("Search", fmt.Sprintf("  %s Searching...\n", m.spinner.View()), panelW))
 		return common.AppStyle.Render(b.String())
 	}
 
@@ -258,11 +279,13 @@ func (m *Model) View() string {
 		b.WriteString("\n\n")
 	}
 
+	panelTitle := "Popular Books"
+	if m.activeQuery != "" {
+		panelTitle = fmt.Sprintf("Results for \"%s\"", m.activeQuery)
+	}
+
 	if len(m.results) > 0 {
-		panelW := m.width - 2
-		if panelW < 40 {
-			panelW = 80
-		}
+		panelTitle = fmt.Sprintf("%s (%d)", panelTitle, len(m.results))
 		tableW := panelW - 4
 		if tableW < 40 {
 			tableW = 40
@@ -270,14 +293,17 @@ func (m *Model) View() string {
 		m.table.SetColumns(tableColumns(tableW))
 		m.table.SetWidth(tableW)
 		tableView := lipgloss.NewStyle().Width(tableW).Render(m.table.View())
-		b.WriteString(common.RenderPanel(
-			fmt.Sprintf("Results (%d)", len(m.results)),
-			tableView, panelW))
-	} else {
-		panelW := m.width - 2
-		if panelW < 40 {
-			panelW = 80
+		b.WriteString(common.RenderPanel(panelTitle, tableView, panelW))
+	} else if m.searched {
+		emptyMsg := "No books found."
+		if m.activeQuery != "" {
+			emptyMsg = fmt.Sprintf("No books found matching \"%s\". Try another search term.", m.activeQuery)
+		} else {
+			emptyMsg = "No books found. Press '/' to type a search query."
 		}
+		emptyView := lipgloss.NewStyle().Padding(1, 2).Render(common.ValueStyle.Render(emptyMsg))
+		b.WriteString(common.RenderPanel(panelTitle, emptyView, panelW))
+	} else {
 		tableW := panelW - 4
 		if tableW < 40 {
 			tableW = 40
@@ -286,7 +312,7 @@ func (m *Model) View() string {
 		m.table.SetWidth(tableW)
 		m.table.SetRows([]table.Row{})
 		tableView := lipgloss.NewStyle().Width(tableW).Render(m.table.View())
-		b.WriteString(common.RenderPanel("Results", tableView, panelW))
+		b.WriteString(common.RenderPanel(panelTitle, tableView, panelW))
 	}
 
 	return common.AppStyle.Render(b.String())
@@ -297,10 +323,12 @@ func (m *Model) HelpBindings() []key.Binding {
 	if m.inputFocused {
 		return []key.Binding{
 			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "search")),
+			key.NewBinding(key.WithKeys("ctrl+l"), key.WithHelp("ctrl+l", "clear search")),
 		}
 	}
 	bindings := []key.Binding{
 		key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "focus input")),
+		key.NewBinding(key.WithKeys("ctrl+l"), key.WithHelp("ctrl+l", "clear search")),
 	}
 	if len(m.results) > 0 {
 		bindings = append(bindings,

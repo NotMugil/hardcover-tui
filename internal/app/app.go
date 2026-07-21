@@ -170,7 +170,11 @@ func (m Model) contentHeight() int {
 // pushScreen pushes a new screen onto the navstack.
 func (m Model) pushScreen(title string, screen Screen) (Model, tea.Cmd) {
 	if s, ok := screen.(sizable); ok && m.width > 0 {
-		s.SetSize(m.width, m.contentHeight())
+		w := m.width
+		if w < 1 {
+			w = 1
+		}
+		s.SetSize(w, m.contentHeight())
 	}
 	item := navstack.NavigationItem{Title: title, Model: screen}
 	cmd := m.nav.Push(item)
@@ -232,6 +236,22 @@ func (m Model) createTabScreen(idx int) Screen {
 	}
 }
 
+func batchCmds(cmds ...tea.Cmd) tea.Cmd {
+	var valid []tea.Cmd
+	for _, c := range cmds {
+		if c != nil {
+			valid = append(valid, c)
+		}
+	}
+	if len(valid) == 0 {
+		return nil
+	}
+	if len(valid) == 1 {
+		return valid[0]
+	}
+	return tea.Batch(valid...)
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var alertCmd tea.Cmd
 	outAlert, alertTickCmd := m.alert.Update(msg)
@@ -242,7 +262,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case components.NotifyMsg:
 		alertKey := string(msg.Level)
 		newAlertCmd := m.alert.NewAlertCmd(alertKey, msg.Message)
-		return m, tea.Batch(alertCmd, newAlertCmd)
+		return m, batchCmds(alertCmd, newAlertCmd)
 
 	case components.LoaderFrameMsg:
 		if m.tabLoading {
@@ -254,7 +274,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			frameCmd := m.loader.Update()
-			return m, tea.Batch(alertCmd, frameCmd)
+			return m, batchCmds(alertCmd, frameCmd)
 		}
 		return m, alertCmd
 
@@ -264,18 +284,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.win.Width = msg.Width
 		m.win.Height = msg.Height
 		m.help.Width = msg.Width
+
+		w := m.width
+		if w < 1 {
+			w = 1
+		}
+		h := m.contentHeight()
+
 		if m.setupMode && m.setupScr != nil {
 			if s, ok := m.setupScr.(sizable); ok {
-				s.SetSize(msg.Width, msg.Height)
+				s.SetSize(w, m.height)
 			}
-			return m, nil
+			return m, alertCmd
 		}
 		if top := m.nav.Top(); top != nil {
 			if s, ok := top.Model.(sizable); ok {
-				s.SetSize(msg.Width, m.contentHeight())
+				s.SetSize(w, h)
 			}
 		}
-		return m, nil
+		return m, alertCmd
 
 	case keyringCheckMsg:
 		if msg.err != nil || msg.apiKey == "" {
@@ -283,10 +310,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.setupMode = true
 			s := setup.New()
 			m.setupScr = s
-			return m, s.Init()
+			return m, batchCmds(alertCmd, s.Init())
 		}
 		m.client = api.NewClient(msg.apiKey)
-		return m, m.loadUser()
+		return m, batchCmds(alertCmd, m.loadUser())
 
 	case userLoadedMsg:
 		m.loading = false
@@ -295,7 +322,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.setupMode = true
 			s := setup.New()
 			m.setupScr = s
-			return m, s.Init()
+			return m, batchCmds(alertCmd, s.Init())
 		}
 		m.user = msg.user
 		m.setupMode = false
@@ -305,12 +332,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tabLoading = true
 		loaderCmd := m.loader.Start()
 		nm, pushCmd := m.pushScreen("Home", screen)
-		return nm, tea.Batch(pushCmd, loaderCmd)
+		return nm, batchCmds(alertCmd, pushCmd, loaderCmd)
 
 	case setup.SetupCompleteMsg:
 		m.client = api.NewClient(msg.Token)
 		m.loading = true
-		return m, tea.Batch(m.spinner.Tick, m.loadUser())
+		return m, batchCmds(alertCmd, m.spinner.Tick, m.loadUser())
 
 	case home.NavigateToBookMsg:
 		title := "Book"
@@ -322,9 +349,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !screen.Loaded() {
 			nm.tabLoading = true
 			loaderCmd := nm.loader.Start()
-			return nm, tea.Batch(pushCmd, loaderCmd)
+			return nm, batchCmds(alertCmd, pushCmd, loaderCmd)
 		}
-		return nm, pushCmd
+		return nm, batchCmds(alertCmd, pushCmd)
 
 	case search.NavigateToBookMsg:
 		screen := bookdetail.NewFromBookID(m.deps(), msg.BookID)
@@ -335,9 +362,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !screen.Loaded() {
 			nm.tabLoading = true
 			loaderCmd := nm.loader.Start()
-			return nm, tea.Batch(pushCmd, loaderCmd)
+			return nm, batchCmds(alertCmd, pushCmd, loaderCmd)
 		}
-		return nm, pushCmd
+		return nm, batchCmds(alertCmd, pushCmd)
 
 	case lists.NavigateToBookFromListMsg:
 		entries := make([]bookdetail.ListBookEntry, len(msg.ListBooks))
@@ -349,17 +376,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !screen.Loaded() {
 			nm.tabLoading = true
 			loaderCmd := nm.loader.Start()
-			return nm, tea.Batch(pushCmd, loaderCmd)
+			return nm, batchCmds(alertCmd, pushCmd, loaderCmd)
 		}
-		return nm, pushCmd
+		return nm, batchCmds(alertCmd, pushCmd)
 
 	case bookdetail.NavigateToReviewMsg:
 		screen := review.New(m.deps(), msg.UserBook)
-		return m.pushScreen("Review", screen)
+		nm, pushCmd := m.pushScreen("Review", screen)
+		return nm, batchCmds(alertCmd, pushCmd)
 
 	case bookdetail.NavigateToProgressMsg:
 		screen := progress.New(m.deps(), msg.UserBook)
-		return m.pushScreen("Progress", screen)
+		nm, pushCmd := m.pushScreen("Progress", screen)
+		return nm, batchCmds(alertCmd, pushCmd)
 
 	case progress.NavigateBackMsg:
 		if len(m.nav.StackSummary()) > 1 {
@@ -369,39 +398,41 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					s.SetSize(m.width, m.contentHeight())
 				}
 			}
-			return m, cmd
+			return m, batchCmds(alertCmd, cmd)
 		}
 
 	case bookdetail.NavigateToJournalMsg:
 		screen := journal.New(m.deps(), msg.UserBook)
-		return m.pushScreen("Journal", screen)
+		nm, pushCmd := m.pushScreen("Journal", screen)
+		return nm, batchCmds(alertCmd, pushCmd)
 
 	case spinner.TickMsg:
 		if m.loading {
 			var cmd tea.Cmd
 			m.spinner, cmd = m.spinner.Update(msg)
-			return m, cmd
+			return m, batchCmds(alertCmd, cmd)
 		}
 		if !m.setupMode {
 			cmd := m.nav.Update(msg)
-			return m, cmd
+			return m, batchCmds(alertCmd, cmd)
 		}
-		return m, nil
+		return m, alertCmd
 
 	case tea.MouseMsg:
 		if !m.setupMode && !m.loading &&
 			msg.Action == tea.MouseActionPress && msg.Button == tea.MouseButtonLeft {
 			for i, t := range navTabs {
 				if zone.Get(t.zoneID).InBounds(msg) {
-					return m.switchTab(i)
+					nm, cmd := m.switchTab(i)
+					return nm, batchCmds(alertCmd, cmd)
 				}
 			}
 		}
 		if !m.setupMode && !m.loading {
 			cmd := m.nav.Update(msg)
-			return m, cmd
+			return m, batchCmds(alertCmd, cmd)
 		}
-		return m, nil
+		return m, alertCmd
 
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
@@ -411,21 +442,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.setupMode && m.setupScr != nil {
 			updated, cmd := m.setupScr.Update(msg)
 			m.setupScr = updated.(Screen)
-			return m, cmd
+			return m, batchCmds(alertCmd, cmd)
 		}
 
 		if m.loading {
-			return m, nil
+			return m, alertCmd
 		}
 
 		if m.tabLoading {
-			return m, nil
+			return m, alertCmd
 		}
 
 		if top := m.nav.Top(); top != nil {
 			if f, ok := top.Model.(inputFocusable); ok && f.InputFocused() {
 				cmd := m.nav.Update(msg)
-				return m, cmd
+				return m, batchCmds(alertCmd, cmd)
 			}
 		}
 
@@ -442,10 +473,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					s.SetSize(m.width, m.height)
 					m.setupScr = s
 					_ = m.nav.Clear()
-					return m, s.Init()
+					return m, batchCmds(alertCmd, s.Init())
 				}
 			}
-			return m, nil
+			return m, alertCmd
 		}
 
 		switch {
@@ -459,55 +490,59 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						s.SetSize(m.width, m.contentHeight())
 					}
 				}
-				return m, cmd
+				return m, batchCmds(alertCmd, cmd)
 			}
 			cmd := m.nav.Update(msg)
-			return m, cmd
+			return m, batchCmds(alertCmd, cmd)
 		case key.Matches(msg, common.Keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
-			return m, nil
+			return m, alertCmd
 		case key.Matches(msg, common.Keys.Logout):
 			m.confirm = components.NewConfirm("Are you sure you want to log out?", "logout")
-			return m, nil
+			return m, alertCmd
 		case key.Matches(msg, common.Keys.Library):
-			return m.switchTab(0)
+			nm, cmd := m.switchTab(0)
+			return nm, batchCmds(alertCmd, cmd)
 		case key.Matches(msg, common.Keys.Search):
-			return m.switchTab(1)
+			nm, cmd := m.switchTab(1)
+			return nm, batchCmds(alertCmd, cmd)
 		case key.Matches(msg, common.Keys.Lists):
-			return m.switchTab(2)
+			nm, cmd := m.switchTab(2)
+			return nm, batchCmds(alertCmd, cmd)
 		case key.Matches(msg, common.Keys.Stats):
-			return m.switchTab(3)
+			nm, cmd := m.switchTab(3)
+			return nm, batchCmds(alertCmd, cmd)
 		case key.Matches(msg, common.Keys.NextTab):
 			next := (m.activeTab + 1) % len(navTabs)
-			return m.switchTab(next)
+			nm, cmd := m.switchTab(next)
+			return nm, batchCmds(alertCmd, cmd)
 		case key.Matches(msg, common.Keys.PrevTab):
 			prev := (m.activeTab - 1 + len(navTabs)) % len(navTabs)
-			return m.switchTab(prev)
+			nm, cmd := m.switchTab(prev)
+			return nm, batchCmds(alertCmd, cmd)
 		}
 
 		cmd := m.nav.Update(msg)
-		return m, cmd
+		return m, batchCmds(alertCmd, cmd)
 	}
 
 	if m.setupMode && m.setupScr != nil {
 		updated, cmd := m.setupScr.Update(msg)
 		m.setupScr = updated.(Screen)
-		return m, cmd
+		return m, batchCmds(alertCmd, cmd)
 	}
 
 	if !m.loading {
 		cmd := m.nav.Update(msg)
-		return m, cmd
+		return m, batchCmds(alertCmd, cmd)
 	}
 
-	return m, nil
+	return m, alertCmd
 }
 
 func (m Model) View() string {
-	if m.width > 0 && m.height > 0 && (m.width < 60 || m.height < 15) {
-		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
-			common.ErrorStyle.Render(fmt.Sprintf("Terminal window too small (%dx%d, min 60x15 required)", m.width, m.height)),
-		)
+	if m.width <= 0 || m.height <= 0 {
+		return ""
 	}
 
 	if m.loading {
@@ -595,17 +630,20 @@ func (m Model) renderNav() string {
 	)
 
 	navW := m.width - 2 // AppStyle padding
-	if navW < 40 {
-		navW = 80
+	if navW < 10 {
+		navW = 10
 	}
 	gap := navW - lipgloss.Width(tabs) - lipgloss.Width(shortcuts)
 	if gap < 1 {
 		gap = 1
 	}
 
-	return lipgloss.NewStyle().PaddingLeft(1).Render(
-		tabs + strings.Repeat(" ", gap) + shortcuts,
-	)
+	if lipgloss.Width(tabs)+lipgloss.Width(shortcuts)+1 <= navW {
+		return lipgloss.NewStyle().PaddingLeft(1).Render(
+			tabs + strings.Repeat(" ", gap) + shortcuts,
+		)
+	}
+	return lipgloss.NewStyle().PaddingLeft(1).Render(tabs)
 }
 
 func (m Model) renderBreadcrumb() string {

@@ -42,6 +42,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.err
 			return m, nil
 		}
+		if msg.user != nil {
+			m.deps.User = msg.user
+		}
 		m.books = msg.books
 		if msg.reading != nil {
 			m.reading = msg.reading
@@ -147,7 +150,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "a":
 				if m.activityFilter == activityFilterMe {
-					m.activityFilter = activityFilterForYou
+					m.activityFilter = activityFilterFollowing
 				} else {
 					m.activityFilter = activityFilterMe
 				}
@@ -236,7 +239,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			if m.activityFilter == activityFilterMe {
-				m.activityFilter = activityFilterForYou
+				m.activityFilter = activityFilterFollowing
 			} else {
 				m.activityFilter = activityFilterMe
 			}

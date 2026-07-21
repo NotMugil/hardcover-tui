@@ -79,8 +79,8 @@ func (m *Model) View() string {
 	}
 
 	fbW := m.getWidth() - 2
-	if fbW < 60 {
-		fbW = 80
+	if fbW < 10 {
+		fbW = 10
 	}
 	m.flexBox.SetWidth(fbW)
 	m.flexBox.SetHeight(m.height)

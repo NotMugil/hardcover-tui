@@ -61,12 +61,12 @@ func (m *Model) View() string {
 
 func (m *Model) renderNormalView() string {
 	fbW := m.width - 2
-	if fbW < 50 {
-		fbW = 80
+	if fbW < 10 {
+		fbW = 10
 	}
 	fbH := m.height
-	if fbH < 10 {
-		fbH = 30
+	if fbH < 5 {
+		fbH = 5
 	}
 	m.flexBox.SetWidth(fbW)
 	m.flexBox.SetHeight(fbH)

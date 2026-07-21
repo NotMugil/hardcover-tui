@@ -18,6 +18,7 @@ query GetMe {
       width
       height
     }
+    cached_image
     created_at
   }
 }

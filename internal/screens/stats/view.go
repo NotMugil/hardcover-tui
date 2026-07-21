@@ -18,8 +18,8 @@ func (m *Model) View() string {
 	}
 
 	panelW := m.width - 4
-	if panelW < 60 {
-		panelW = 80
+	if panelW < 10 {
+		panelW = 10
 	}
 
 	if panelW != m.lastChartW && m.counts != nil {

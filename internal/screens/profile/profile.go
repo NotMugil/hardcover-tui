@@ -47,6 +47,8 @@ type Model struct {
 	bioInput  textinput.Model
 	locInput  textinput.Model
 	editField int // 0=name, 1=bio, 2=location
+	width     int
+	height    int
 }
 
 // New creates a new profile screen.
@@ -87,7 +89,10 @@ func (m *Model) Init() tea.Cmd {
 }
 
 // SetSize updates the available terminal dimensions.
-func (m *Model) SetSize(w, h int) {}
+func (m *Model) SetSize(w, h int) {
+	m.width = w
+	m.height = h
+}
 
 // InputFocused returns true when editing profile fields.
 func (m *Model) InputFocused() bool {
@@ -282,7 +287,8 @@ func (m *Model) View() string {
 		b.WriteString(common.PanelStyle.Render(header.String()))
 		b.WriteString("\n")
 
-		if m.avatarArt != "" {
+		showAvatar := m.width >= 106 && m.height >= 24
+		if m.avatarArt != "" && showAvatar {
 			b.WriteString(common.PanelStyle.Render(m.avatarArt))
 			b.WriteString("\n")
 		}
