@@ -82,10 +82,15 @@ Please read the [Contributing Guide](./CONTRIBUTING.md) before getting started.
 
 ### Resources & Stack
 
-- **Platform**: [Hardcover.app](https://hardcover.app) | [Hardcover API Docs](https://github.com/hardcoverapp/hardcover-docs)
-- **TUI Stack**: [Bubble Tea](https://github.com/charmbracelet/bubbletea), [Bubbles](https://github.com/charmbracelet/bubbles), [Lip Gloss](https://github.com/charmbracelet/lipgloss), [Bubblezone](https://github.com/lrstanley/bubblezone)
-- **GraphQL**: [gqlgenc](https://github.com/gqlgo/gqlgenc)
-- **Keyring**: [go-keyring](https://github.com/zalando/go-keyring)
+- [Hardcover](https://hardcover.app) 
+- [Hardcover API Docs](https://github.com/hardcoverapp/hardcover-docs)
+- [oku](https://github.com/Kameleon21/oku)
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea)
+- [Bubbles](https://github.com/charmbracelet/bubbles)
+- [Lip Gloss](https://github.com/charmbracelet/lipgloss)
+- [Bubblezone](https://github.com/lrstanley/bubblezone)
+- [gqlgenc](https://github.com/gqlgo/gqlgenc)
+- [go-keyring](https://github.com/zalando/go-keyring)
 
 ### Disclaimer
 
