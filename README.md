@@ -34,12 +34,14 @@ go build -o hardcover-tui ./cmd/hardcover-tui
 
 On first launch, `hardcover-tui` will prompt you to enter your Hardcover API key.
 
-1. Obtain your API key from [hardcover.app/account/api](https://hardcover.app/account/api).
+1. Obtain your API key from [hardcover.app/account/api](https://hardcover.app/account/api/keys/new?scope=all).
 2. Launch the app or manage authentication via CLI:
 
 ```bash
 # Save API key to system keyring
-hardcover-tui auth login <your_bearer_token>
+hardcover-tui auth login -t <your_bearer_token>
+# or
+hardcover-tui auth login
 
 # Check current authentication status
 hardcover-tui auth status

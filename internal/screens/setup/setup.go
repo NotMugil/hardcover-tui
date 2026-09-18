@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -121,7 +122,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case validateMsg:
 		if msg.err != nil {
 			m.state = stateError
-			m.err = msg.err
+			var scopeErr *api.InsufficientScopeError
+			switch {
+			case errors.Is(msg.err, api.ErrTokenRevoked):
+				m.err = fmt.Errorf("API token is invalid, expired, or revoked.")
+			case errors.As(msg.err, &scopeErr):
+				m.err = fmt.Errorf("Token lacks required permissions (%s).\nPlease generate an API key with 'all' (Full Access) scope at:\nhttps://hardcover.app/account/api/keys/new?scope=all", scopeErr.Scope)
+			case errors.Is(msg.err, api.ErrDailyLimitExceeded):
+				m.err = fmt.Errorf("Daily API request limit reached. Resets at midnight UTC.")
+			default:
+				m.err = msg.err
+			}
 			return m, nil
 		}
 		if err := keystore.Save(m.token); err != nil {
@@ -181,11 +192,12 @@ func (m *Model) View() string {
 		sections = append(sections,
 			common.QuoteStyle.Render("An Unofficial Hardcover TUI client"),
 			"",
-			common.LabelStyle.Render("Enter your API token:"),
+			common.LabelStyle.Render("Enter your Personal Access Token:"),
 			"",
 			common.FocusedBorderStyle.Render(m.textInput.View()),
 			"",
-			common.ValueStyle.Render("Get your token from https://hardcover.app/account/api"),
+			common.ValueStyle.Render("Get your token from https://hardcover.app/account/api/keys/new?scope=all"),
+			common.HelpStyle.Render("Alternatively you can run hardcover-tui auth login"),
 			"",
 			m.help.ShortHelpView([]key.Binding{
 				key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "continue")),
@@ -195,7 +207,7 @@ func (m *Model) View() string {
 
 	case stateValidating:
 		sections = append(sections,
-			fmt.Sprintf("%s Validating token...", m.spinner.View()),
+			fmt.Sprintf("%s Validating token with Hardcover API...", m.spinner.View()),
 		)
 
 	case stateError:

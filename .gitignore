@@ -19,3 +19,7 @@ bin/
 
 # Vendored dependencies
 vendor/
+
+# Environment variables
+*.env*
+!.env.example
