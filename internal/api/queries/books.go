@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/NotMugil/hardcover-tui/internal/api"
 )
@@ -13,8 +14,21 @@ import (
 // and resilient Typesense response unmarshaling via gen.Client.
 func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error) {
 	cleanQuery := strings.TrimSpace(query)
+	if cleanQuery == "" {
+		return nil, nil
+	}
 
-	res, err := c.Gen.SearchBooks(ctx, cleanQuery, 20)
+	cacheKey := "search:" + strings.ToLower(cleanQuery)
+	if val, ok := c.Cache.Get(cacheKey); ok {
+		if cached, valid := val.([]api.Book); valid {
+			return cached, nil
+		}
+	}
+
+	searchCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	res, err := c.Gen.SearchBooks(searchCtx, cleanQuery, 20)
 	if err != nil {
 		return nil, fmt.Errorf("search API request failed: %w", err)
 	}
@@ -23,7 +37,11 @@ func Search(ctx context.Context, c *api.Client, query string) ([]api.Book, error
 		return nil, nil
 	}
 
-	return ParseSearchResultsContainer(res.Search.Results)
+	books, err := ParseSearchResultsContainer(res.Search.Results)
+	if err == nil && len(books) > 0 {
+		c.Cache.Set(cacheKey, books, 3*time.Minute)
+	}
+	return books, err
 }
 
 // ParseSearchResults extracts and normalizes Book records from raw Search GraphQL JSON responses.
@@ -151,8 +169,15 @@ func ParseSearchResultsContainer(results json.RawMessage) ([]api.Book, error) {
 	return books, nil
 }
 
-// GetBookByID fetches a book by its primary key using gen.Client.
+// GetBookByID fetches a book by its primary key using gen.Client with caching.
 func GetBookByID(ctx context.Context, c *api.Client, bookID int) (*api.Book, error) {
+	cacheKey := fmt.Sprintf("book:%d", bookID)
+	if val, ok := c.Cache.Get(cacheKey); ok {
+		if cached, valid := val.(*api.Book); valid {
+			return cached, nil
+		}
+	}
+
 	res, err := c.Gen.GetBookByID(ctx, bookID)
 	if err != nil {
 		return nil, fmt.Errorf("query books_by_pk: %w", err)
@@ -191,11 +216,27 @@ func GetBookByID(ctx context.Context, c *api.Client, bookID int) (*api.Book, err
 			})
 		}
 	}
+
+	c.Cache.Set(cacheKey, b, 10*time.Minute)
 	return b, nil
 }
 
-// GetBookTags fetches genres, moods, and content warnings for a book using gen.Client.
+// BookTagsResult holds cached genre, mood, and content warning tags.
+type BookTagsResult struct {
+	Genres          []api.TagItem
+	Moods           []api.TagItem
+	ContentWarnings []api.TagItem
+}
+
+// GetBookTags fetches genres, moods, and content warnings for a book using gen.Client with caching.
 func GetBookTags(ctx context.Context, c *api.Client, bookID int) (genres, moods, contentWarnings []api.TagItem, err error) {
+	cacheKey := fmt.Sprintf("book_tags:%d", bookID)
+	if val, ok := c.Cache.Get(cacheKey); ok {
+		if cached, valid := val.(BookTagsResult); valid {
+			return cached.Genres, cached.Moods, cached.ContentWarnings, nil
+		}
+	}
+
 	res, err := c.Gen.GetBookTags(ctx, bookID)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("get book tags: %w", err)
@@ -216,11 +257,25 @@ func GetBookTags(ctx context.Context, c *api.Client, bookID int) (genres, moods,
 			contentWarnings = append(contentWarnings, item)
 		}
 	}
+
+	c.Cache.Set(cacheKey, BookTagsResult{
+		Genres:          genres,
+		Moods:           moods,
+		ContentWarnings: contentWarnings,
+	}, 15*time.Minute)
+
 	return genres, moods, contentWarnings, nil
 }
 
-// GetBookReviews fetches popular community reviews for a book using gen.Client.
+// GetBookReviews fetches popular community reviews for a book using gen.Client with caching.
 func GetBookReviews(ctx context.Context, c *api.Client, bookID, limit int) ([]api.BookReview, error) {
+	cacheKey := fmt.Sprintf("book_reviews:%d:%d", bookID, limit)
+	if val, ok := c.Cache.Get(cacheKey); ok {
+		if cached, valid := val.([]api.BookReview); valid {
+			return cached, nil
+		}
+	}
+
 	res, err := c.Gen.GetBookReviews(ctx, bookID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("get book reviews: %w", err)
@@ -242,6 +297,8 @@ func GetBookReviews(ctx context.Context, c *api.Client, bookID, limit int) ([]ap
 			},
 		}
 	}
+
+	c.Cache.Set(cacheKey, reviews, 5*time.Minute)
 	return reviews, nil
 }
 

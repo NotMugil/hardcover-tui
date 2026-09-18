@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -121,6 +122,21 @@ func New() Model {
 		Key:       string(components.NotifySuccess),
 		ForeColor: "#10B981", // ColorSuccess
 		Prefix:    "\u2714",  // checkmark
+	})
+	alertModel.RegisterNewAlertType(bubbleup.AlertDefinition{
+		Key:       string(components.NotifyError),
+		ForeColor: "#EF4444", // ColorError
+		Prefix:    "\u2718",  // cross
+	})
+	alertModel.RegisterNewAlertType(bubbleup.AlertDefinition{
+		Key:       string(components.NotifyWarning),
+		ForeColor: "#F59E0B", // ColorWarning
+		Prefix:    "\u26A0",  // warning
+	})
+	alertModel.RegisterNewAlertType(bubbleup.AlertDefinition{
+		Key:       string(components.NotifyInfo),
+		ForeColor: "#3B82F6", // ColorInfo
+		Prefix:    "\u2139",  // info
 	})
 
 	return Model{
@@ -320,7 +336,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.err = msg.err
 			m.setupMode = true
-			s := setup.NewWithError(msg.err)
+
+			var scopeErr *api.InsufficientScopeError
+			var userErrMsg error
+
+			switch {
+			case errors.Is(msg.err, api.ErrTokenRevoked):
+				_ = keystore.Delete()
+				m.client = nil
+				m.user = nil
+				userErrMsg = fmt.Errorf("API token was revoked or expired and has been removed from keyring. Please log in again.")
+			case errors.As(msg.err, &scopeErr):
+				_ = keystore.Delete()
+				m.client = nil
+				m.user = nil
+				userErrMsg = fmt.Errorf("API token lacks required permissions (%s).\nPlease create a key with 'all' (Full Access) scope or log in via Device Authorization.", scopeErr.Scope)
+			case errors.Is(msg.err, api.ErrDailyLimitExceeded):
+				userErrMsg = fmt.Errorf("Daily API request limit reached. Resets at midnight UTC.")
+			default:
+				userErrMsg = msg.err
+			}
+
+			s := setup.NewWithError(userErrMsg)
+			if s != nil && m.width > 0 {
+				s.SetSize(m.width, m.height)
+			}
 			m.setupScr = s
 			return m, batchCmds(alertCmd, s.Init())
 		}
