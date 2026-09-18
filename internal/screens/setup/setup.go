@@ -13,6 +13,7 @@ import (
 
 	"github.com/NotMugil/hardcover-tui/internal/api"
 	"github.com/NotMugil/hardcover-tui/internal/api/queries"
+	"github.com/NotMugil/hardcover-tui/internal/auth"
 	"github.com/NotMugil/hardcover-tui/internal/common"
 	"github.com/NotMugil/hardcover-tui/internal/keystore"
 )
@@ -100,6 +101,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "ctrl+o", "ctrl+b":
+			_ = auth.OpenBrowser("https://hardcover.app/account/api/keys/new?scope=all")
+			return m, nil
 		case "enter":
 			if m.state == stateInput {
 				token := keystore.FormatToken(m.textInput.Value())
@@ -201,6 +205,7 @@ func (m *Model) View() string {
 			"",
 			m.help.ShortHelpView([]key.Binding{
 				key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "continue")),
+				key.NewBinding(key.WithKeys("ctrl+o"), key.WithHelp("ctrl+o", "open link")),
 				key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 			}),
 		)
@@ -224,6 +229,7 @@ func (m *Model) View() string {
 		sections = append(sections,
 			m.help.ShortHelpView([]key.Binding{
 				key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "try again")),
+				key.NewBinding(key.WithKeys("ctrl+o"), key.WithHelp("ctrl+o", "open link")),
 				key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 			}),
 		)

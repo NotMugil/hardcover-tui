@@ -21,7 +21,7 @@ const (
 	deviceEndpoint        = "https://hardcover.app/oauth2/device"
 	tokenEndpoint         = "https://hardcover.app/oauth2/token"
 	fallbackTokenEndpoint = "https://hardcover.app/oauth/token"
-	defaultUserAgent      = "HardcoverTUI/1.1 (github.com/NotMugil/hardcover-tui)"
+	defaultUserAgent      = "HardcoverTUI/1.2.0 (github.com/NotMugil/hardcover-tui)"
 )
 
 // DeviceAuthResponse is the payload returned by the device authorization endpoint.
